@@ -69,42 +69,41 @@ class SocketListen extends Command
                 'porta_cliente' => $porta_cliente,
             ]);
 
-            // Lê dados enviados pelo dispositivo (buffer de 4096 bytes)
-            $dados = socket_read($cliente, 4096, PHP_NORMAL_READ);
-
-            if ($dados === false || trim($dados) === '') {
-                $this->warn("[Socket] Conexão vazia de {$ip} — ignorada.");
-                Log::warning('[Socket] Dados vazios ou leitura falhou', [
-                    'ip'    => $ip,
-                    'dados' => $dados,
-                ]);
-                socket_close($cliente);
-                continue;
-            }
-
-            $raw = trim($dados);
-            $this->line("[Socket] Dados recebidos de {$ip}: {$raw}");
-            Log::info('[Socket] Frame recebido', [
-                'ip'          => $ip,
-                'raw'         => $raw,
-                'bytes'       => strlen($raw),
-                'recebido_em' => now()->toDateTimeString(),
-            ]);
-
             try {
+                // Lê dados enviados pelo dispositivo (buffer de 4096 bytes)
+                $dados = @socket_read($cliente, 4096, PHP_NORMAL_READ);
+
+                if ($dados === false || trim($dados) === '') {
+                    $this->warn("[Socket] Conexão vazia de {$ip} — ignorada.");
+                    Log::warning('[Socket] Dados vazios ou leitura falhou', [
+                        'ip'    => $ip,
+                        'dados' => $dados,
+                    ]);
+                    socket_close($cliente);
+                    continue;
+                }
+
+                $raw = trim($dados);
+                $this->line("[Socket] Dados recebidos de {$ip}: {$raw}");
+                Log::info('[Socket] Frame recebido', [
+                    'ip'          => $ip,
+                    'raw'         => $raw,
+                    'bytes'       => strlen($raw),
+                    'recebido_em' => now()->toDateTimeString(),
+                ]);
+
                 $this->processarDados($raw, $ip);
                 socket_write($cliente, "OK\r\n");
                 Log::info('[Socket] Resposta OK enviada', ['ip' => $ip]);
             } catch (\Throwable $e) {
                 Log::error('[Socket] Erro ao processar frame', [
                     'ip'    => $ip,
-                    'raw'   => $raw,
+                    'raw'   => $raw ?? '',
                     'erro'  => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
                 ]);
-                socket_write($cliente, "ERR\r\n");
+                @socket_write($cliente, "ERR\r\n");
             } finally {
-                socket_close($cliente);
+                @socket_close($cliente);
                 Log::info('[Socket] Conexão encerrada', ['ip' => $ip]);
             }
         }
