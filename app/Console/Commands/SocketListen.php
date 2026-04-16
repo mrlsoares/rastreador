@@ -63,11 +63,8 @@ class SocketListen extends Command
 
             // Obtém IP do cliente
             socket_getpeername($cliente, $ip, $porta_cliente);
-            $this->line("[Socket] Nova conexão de: {$ip}:{$porta_cliente}");
-            Log::info('[Socket] Nova conexão recebida', [
-                'ip'            => $ip,
-                'porta_cliente' => $porta_cliente,
-            ]);
+
+            $isHeartbeat = false;
 
             try {
                 // Lê dados enviados pelo dispositivo (buffer de 4096 bytes)
@@ -84,17 +81,32 @@ class SocketListen extends Command
                 }
 
                 $raw = trim($dados);
-                $this->line("[Socket] Dados recebidos de {$ip}: {$raw}");
-                Log::info('[Socket] Frame recebido', [
-                    'ip'          => $ip,
-                    'raw'         => $raw,
-                    'bytes'       => strlen($raw),
-                    'recebido_em' => now()->toDateTimeString(),
-                ]);
+                $isHeartbeat = strtolower($raw) === 'xx';
+                
+                // Apenas logamos a conexão e a recepção se não for um heartbeat rotineiro
+                if (!$isHeartbeat) {
+                    $this->line("[Socket] Nova conexão de: {$ip}:{$porta_cliente}");
+                    Log::info('[Socket] Nova conexão recebida', [
+                        'ip'            => $ip,
+                        'porta_cliente' => $porta_cliente,
+                    ]);
+                    
+                    $this->line("[Socket] Dados recebidos de {$ip}: {$raw}");
+                    Log::info('[Socket] Frame recebido', [
+                        'ip'          => $ip,
+                        'raw'         => $raw,
+                        'bytes'       => strlen($raw),
+                        'recebido_em' => now()->toDateTimeString(),
+                    ]);
+                }
 
                 $this->processarDados($raw, $ip);
+                
                 socket_write($cliente, "OK\r\n");
-                Log::info('[Socket] Resposta OK enviada', ['ip' => $ip]);
+                
+                if (!$isHeartbeat) {
+                    Log::info('[Socket] Resposta OK enviada', ['ip' => $ip]);
+                }
             } catch (\Throwable $e) {
                 Log::error('[Socket] Erro ao processar frame', [
                     'ip'    => $ip,
@@ -104,7 +116,9 @@ class SocketListen extends Command
                 @socket_write($cliente, "ERR\r\n");
             } finally {
                 @socket_close($cliente);
-                Log::info('[Socket] Conexão encerrada', ['ip' => $ip]);
+                if (!$isHeartbeat) {
+                    Log::info('[Socket] Conexão encerrada', ['ip' => $ip]);
+                }
             }
         }
 
@@ -125,6 +139,12 @@ class SocketListen extends Command
                 'ip'  => $ip,
                 'raw' => $raw,
             ]);
+            return;
+        }
+
+        // Verifica se é tipo Heartbeat
+        if (isset($dados['tipo']) && $dados['tipo'] === 'heartbeat') {
+            // Retorno silencioso sem gerar log para não poluir
             return;
         }
 

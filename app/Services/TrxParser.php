@@ -40,6 +40,14 @@ class TrxParser
             return null;
         }
 
+        // Tratamento de Heartbeat (keep-alive) comum como "xx"
+        if (strtolower($linha) === 'xx') {
+            return [
+                'tipo'     => 'heartbeat',
+                'raw_data' => $raw,
+            ];
+        }
+
         // Suporte aos dois formatos mais comuns do TRX-16:
         // Formato 1 (com #): #IMEI,data,hora,lat,lon,...
         // Formato 2 (sem #): IMEI,data,hora,lat,lon,...
