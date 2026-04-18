@@ -74,6 +74,11 @@ class TqParser implements ProtocolParserInterface
         $latitude = $this->parseBcdCoordinate($latRaw, 2);
         $longitude = $this->parseBcdCoordinate($lonRaw, 3);
 
+        Log::info("[TqParser] Packet Binary", [
+            'imei' => $imei,
+            'raw'  => $hex
+        ]);
+
         // Hemisfério (Brasil é sempre S e W no caso deste usuário)
         if ($latitude > 0) $latitude = -$latitude;
         if ($longitude > 0) $longitude = -$longitude;
@@ -135,7 +140,7 @@ class TqParser implements ProtocolParserInterface
         $data = $partes[11];
         $status = $partes[12] ?? 'N/A';
 
-        Log::debug("[TqParser] Packet H02", [
+        Log::info("[TqParser] Packet H02 ASCII", [
             'tipo'   => $tipoPacket,
             'status' => $status,
             'imei'   => $imei
