@@ -148,6 +148,11 @@ class TqParser implements ProtocolParserInterface
 
         if ($valid !== 'A' && $valid !== 'V') return null;
 
+        $evento = null;
+        if ($tipoPacket === 'V1' || $tipoPacket === 'V2' || $tipoPacket === 'EX') {
+            $evento = 'SOS';
+        }
+
         try {
             $dataHora = Carbon::createFromFormat('dmyHis', $data . $hora);
         } catch (\Exception $e) {
@@ -155,7 +160,8 @@ class TqParser implements ProtocolParserInterface
         }
 
         return [
-            'tipo'          => 'localizacao',
+            'tipo'          => $evento ? 'alerta' : 'localizacao',
+            'alerta'        => $evento,
             'imei'          => $imei,
             'data_hora'     => $dataHora,
             'latitude'      => $this->convertNmeaToDecimal($lat, $ns),
