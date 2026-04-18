@@ -6,9 +6,11 @@ use App\Models\Evento;
 use App\Models\Posicao;
 use App\Models\Rastreador;
 use App\Services\TrxParser;
+use App\Services\Gt06Parser;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class SocketListen extends Command
 {
@@ -67,45 +69,49 @@ class SocketListen extends Command
             $isHeartbeat = false;
 
             try {
-                // Lê dados enviados pelo dispositivo (buffer de 4096 bytes)
-                $dados = @socket_read($cliente, 4096, PHP_NORMAL_READ);
+                // Lê dados — Para binário (GT06) não podemos usar PHP_NORMAL_READ
+                $dados = @socket_read($cliente, 4096, PHP_BINARY_READ);
 
-                if ($dados === false || trim($dados) === '') {
-                    $this->warn("[Socket] Conexão vazia de {$ip} — ignorada.");
-                    Log::warning('[Socket] Dados vazios ou leitura falhou', [
-                        'ip'    => $ip,
-                        'dados' => $dados,
-                    ]);
+                if ($dados === false || $dados === '') {
                     socket_close($cliente);
                     continue;
                 }
 
-                $raw = trim($dados);
-                $isHeartbeat = strtolower($raw) === 'xx';
+                $isGt06 = str_starts_with($dados, Gt06Parser::START_BIT);
+                $raw = $isGt06 ? $dados : trim($dados);
+                
+                $isHeartbeat = false;
+                if (!$isGt06) {
+                    $isHeartbeat = strtolower($raw) === 'xx';
+                }
                 
                 // Apenas logamos a conexão e a recepção se não for um heartbeat rotineiro
                 if (!$isHeartbeat) {
-                    $this->line("[Socket] Nova conexão de: {$ip}:{$porta_cliente}");
+                    $this->line("[Socket] Nova conexão de: {$ip}:{$porta_cliente} | Protocolo: " . ($isGt06 ? 'GT06 (Binário)' : 'TRX-16 (ASCII)'));
                     Log::info('[Socket] Nova conexão recebida', [
                         'ip'            => $ip,
+                        'protocolo'     => $isGt06 ? 'GT06' : 'TRX-16',
                         'porta_cliente' => $porta_cliente,
                     ]);
                     
-                    $this->line("[Socket] Dados recebidos de {$ip}: {$raw}");
+                    $displayRaw = $isGt06 ? bin2hex($raw) : $raw;
+                    $this->line("[Socket] Dados recebidos de {$ip}: {$displayRaw}");
                     Log::info('[Socket] Frame recebido', [
                         'ip'          => $ip,
-                        'raw'         => $raw,
+                        'raw'         => $displayRaw,
                         'bytes'       => strlen($raw),
                         'recebido_em' => now()->toDateTimeString(),
                     ]);
                 }
 
-                $this->processarDados($raw, $ip);
+                $resposta = $this->processarDados($raw, $ip, $isGt06);
                 
-                socket_write($cliente, "OK\r\n");
+                if ($resposta) {
+                    socket_write($cliente, $resposta);
+                }
                 
-                if (!$isHeartbeat) {
-                    Log::info('[Socket] Resposta OK enviada', ['ip' => $ip]);
+                if (!$isHeartbeat && !$isGt06) {
+                    Log::info('[Socket] Resposta enviada', ['ip' => $ip]);
                 }
             } catch (\Throwable $e) {
                 Log::error('[Socket] Erro ao processar frame', [
@@ -128,24 +134,45 @@ class SocketListen extends Command
 
     /**
      * Parseia e persiste os dados recebidos no banco.
+     * Retorna a string de resposta para o rastreador.
      */
-    private function processarDados(string $raw, string $ip = ''): void
+    private function processarDados(string $raw, string $ip = '', bool $isGt06 = false): ?string
     {
-        $dados = TrxParser::parse($raw);
+        $dados = $isGt06 ? Gt06Parser::parse($raw) : TrxParser::parse($raw);
 
         if (!$dados) {
-            $this->warn("[Socket] Frame inválido de {$ip}: {$raw}");
+            $displayRaw = $isGt06 ? bin2hex($raw) : $raw;
+            $this->warn("[Socket] Frame inválido de {$ip}: {$displayRaw}");
             Log::warning('[Socket] Frame ignorado — parse retornou nulo', [
                 'ip'  => $ip,
-                'raw' => $raw,
+                'raw' => $displayRaw,
             ]);
-            return;
+            return $isGt06 ? null : "ERR\r\n";
         }
+
+        // Resposta padrão
+        $resposta = $isGt06 ? ($dados['response'] ?? null) : "OK\r\n";
 
         // Verifica se é tipo Heartbeat
         if (isset($dados['tipo']) && $dados['tipo'] === 'heartbeat') {
-            // Retorno silencioso sem gerar log para não poluir
-            return;
+            return $resposta;
+        }
+
+        // No GT06, pacotes de login servem apenas para parear IMEI com IP/Conexão
+        if (isset($dados['tipo']) && $dados['tipo'] === 'login') {
+            Cache::put("tracker_imei_{$ip}", $dados['imei'], 3600); // Salva por 1 hora
+            $this->info("[Socket] Login GT06 recebido → IMEI: {$dados['imei']}");
+            return $resposta;
+        }
+
+        // Se for localização mas não tiver IMEI (comum no GT06)
+        if (!isset($dados['imei']) && $isGt06) {
+            $dados['imei'] = Cache::get("tracker_imei_{$ip}");
+            
+            if (!$dados['imei']) {
+                $this->warn("[Socket] Localização GT06 sem IMEI identificável de {$ip}");
+                return $resposta;
+            }
         }
 
         Log::info('[Socket] Frame parseado com sucesso', [
@@ -227,5 +254,7 @@ class SocketListen extends Command
                 }
             }
         });
+
+        return $resposta;
     }
 }
