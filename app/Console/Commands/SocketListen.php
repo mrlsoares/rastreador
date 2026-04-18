@@ -150,6 +150,12 @@ class SocketListen extends Command
             return $isGt06 ? null : "ERR\r\n";
         }
 
+        // Log detalhado de todos os campos recebidos
+        Log::info('[Socket] Frame parseado', array_merge([
+            'ip'        => $ip,
+            'protocolo' => $isGt06 ? 'GT06' : 'TRX-16',
+        ], $dados));
+
         // Resposta padrão
         $resposta = $isGt06 ? ($dados['response'] ?? null) : "OK\r\n";
 
@@ -175,16 +181,9 @@ class SocketListen extends Command
             }
         }
 
-        Log::info('[Socket] Frame parseado com sucesso', [
+        Log::info('[Socket] Frame processado com sucesso', [
             'ip'            => $ip,
             'imei'          => $dados['imei'],
-            'data_hora'     => $dados['data_hora']->toDateTimeString(),
-            'latitude'      => $dados['latitude'],
-            'longitude'     => $dados['longitude'],
-            'velocidade'    => $dados['velocidade'],
-            'angulo'        => $dados['angulo'],
-            'sinal_gps'     => $dados['sinal_gps'],
-            'evento_codigo' => $dados['evento_codigo'],
         ]);
 
         DB::transaction(function () use ($dados, $ip) {
