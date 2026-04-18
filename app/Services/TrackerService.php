@@ -62,24 +62,25 @@ class TrackerService
 
             $rastreador->update(['ultimo_contato' => now()]);
 
-            $posicao = Posicao::create([
-                'rastreador_id' => $rastreador->id,
-                'data_hora'     => $dados['data_hora'] ?? now(),
-                'latitude'      => $dados['latitude'] ?? null,
-                'longitude'     => $dados['longitude'] ?? null,
-                'velocidade'    => $dados['velocidade'] ?? 0,
-                'angulo'        => $dados['angulo'] ?? 0,
-                'sinal_gps'     => $dados['sinal_gps'] ?? 0,
-                'raw_data'      => $dados['raw_data'] ?? '',
-            ]);
+            $posicao = null;
+            if (isset($dados['latitude']) && isset($dados['longitude'])) {
+                $posicao = Posicao::create([
+                    'rastreador_id' => $rastreador->id,
+                    'data_hora'     => $dados['data_hora'] ?? now(),
+                    'latitude'      => $dados['latitude'],
+                    'longitude'     => $dados['longitude'],
+                    'velocidade'    => $dados['velocidade'] ?? 0,
+                    'angulo'        => $dados['angulo'] ?? 0,
+                    'sinal_gps'     => $dados['sinal_gps'] ?? 0,
+                    'raw_data'      => $dados['raw_data'] ?? '',
+                ]);
 
-            Log::info("[TrackerService] Posição recebida", [
-                'imei'      => $dados['imei'],
-                'lat'       => $dados['latitude'],
-                'lon'       => $dados['longitude'],
-                'vel'       => $dados['velocidade'] . ' km/h',
-                'sinal'     => $dados['sinal_gps']
-            ]);
+                Log::info("[TrackerService] Posição recebida", [
+                    'imei'      => $dados['imei'],
+                    'lat'       => $dados['latitude'],
+                    'lon'       => $dados['longitude']
+                ]);
+            }
 
             $this->processEvents($rastreador, $posicao, $dados);
         });
@@ -130,7 +131,7 @@ class TrackerService
 
             Evento::create([
                 'rastreador_id' => $rastreador->id,
-                'posicao_id'    => $posicao->id,
+                'posicao_id'    => $posicao?->id,
                 'tipo'          => $tipo,
                 'descricao'     => $evento['descricao'],
                 'codigo_raw'    => $dados['evento_codigo'] ?? '0000',

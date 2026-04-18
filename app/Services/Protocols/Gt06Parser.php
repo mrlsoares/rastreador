@@ -91,16 +91,17 @@ class Gt06Parser implements ProtocolParserInterface
         $latitude = $gpsInfo['lat'] / 1800000;
         $longitude = $gpsInfo['lon'] / 1800000;
         
-        $status = ord($content[17]);
+        $courseStatus = $gpsInfo['course'];
+        
+        // Hemisférios em GT06 (Bits 10 e 11 da palavra Course/Status)
+        // Bit 10 (0x0400): 0 = Sul, 1 = Norte (negate if 0)
+        // Bit 11 (0x0800): 0 = Leste, 1 = Oeste (negate if 1)
+        if (!($courseStatus & 0x0400)) $latitude = -$latitude;
+        if ($courseStatus & 0x0800) $longitude = -$longitude;
 
-        // Hemisférios em GT06 (Byte 17 do conteúdo)
-        // Bit 2: 1=N, 0=S
-        // Bit 3: 1=E, 0=W
-        if (!($status & 0x04)) $latitude = -$latitude;
-        if ($status & 0x08) $longitude = -$longitude;
-
-        // ACC/Ignição: Bit 1 (0x02) em GT06
-        $ignicao = ($status & 0x02) ? '0001' : '0002';
+        // ACC/Ignição: Bit 1 (0x02) do byte 17 (byte baixo do course)
+        $statusByte = ord($content[17]);
+        $ignicao = ($statusByte & 0x02) ? '0001' : '0002';
 
         $data = [
             'tipo' => 'localizacao',
@@ -114,12 +115,10 @@ class Gt06Parser implements ProtocolParserInterface
             'raw_data' => bin2hex($raw)
         ];
 
-        // Detecção de SOS no pacote de localização (Bit 2: Alarme, e bits de tipo)
-        // Alguns modelos enviam SOS constante no byte de status se o botão for pressionado
-        // Bit 2 (0x04) setado indica alarme. Tipos costumam vir no pacote 0x16, 
-        // mas vamos logar se detectarmos bit de alarme aqui.
-        if ($status & 0x04) {
-             Log::info("[Gt06Parser] Alarme detectado no byte de status", ['ip' => request()->ip(), 'status' => dechex($status)]);
+        // Detecção de SOS no pacote de localização (Bit 2 do byte de status indica alarme)
+        if ($statusByte & 0x04) {
+            $data['evento_tipo'] = 'SOS';
+            $data['evento_descricao'] = 'Botão de pânico acionado';
         }
 
         return $data;
@@ -179,8 +178,20 @@ class Gt06Parser implements ProtocolParserInterface
 
     private function parseStatus(string $content, string $raw): array
     {
+        $infoByte = ord($content[0]);
+        $alarmBits = ($infoByte >> 3) & 0x07; // Bits 3, 4, 5
+        
+        $panico = ($alarmBits === 0x01); // 001 = SOS
+        
+        Log::info("[Gt06Parser] Status recebido", [
+            'info_hex' => dechex($infoByte),
+            'alarm_val' => $alarmBits,
+            'panico' => $panico
+        ]);
+
         return [
-            'tipo' => 'heartbeat',
+            'tipo' => 'status',
+            'em_panico' => $panico,
             'raw_data' => bin2hex($raw),
             'response' => $this->buildResponse(self::PROTO_STATUS, $raw)
         ];
