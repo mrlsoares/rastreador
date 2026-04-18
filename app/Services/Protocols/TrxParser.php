@@ -18,9 +18,12 @@ class TrxParser implements ProtocolParserInterface
 
     public function canParse(string $raw): bool
     {
-        // TRX-16 geralmente começa com # ou IMEI direto (ASCII)
-        // Se não for binário GT06/JT808, tentamos TRX-16
-        return !str_starts_with($raw, "\x78\x78") && !str_starts_with($raw, "~");
+        $trim = trim($raw);
+        // TRX-16 é ASCII e geralmente começa com # ou o IMEI direto. 
+        // Deve conter vírgulas e ter caracteres imprimíveis.
+        return (str_starts_with($trim, '#') || preg_match('/^\d{15},/', $trim)) 
+               && !str_starts_with($raw, "\x78\x78")
+               && !str_starts_with($raw, "~");
     }
 
     public function parse(string $raw): ?array

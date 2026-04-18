@@ -14,8 +14,8 @@ class TqParser implements ProtocolParserInterface
 
     public function canParse(string $raw): bool
     {
-        // TQ protocolos costumam começar com [ ou de formas específicas ASCII/Binárias
-        return str_starts_with($raw, '[') && str_ends_with($raw, ']');
+        // TQ protocolos (Topin/ZW) costumam começar com [ ou $ or *
+        return str_starts_with($raw, '[') || str_starts_with($raw, '$') || str_starts_with($raw, '*');
     }
 
     public function parse(string $raw): ?array
