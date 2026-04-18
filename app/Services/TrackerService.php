@@ -73,6 +73,14 @@ class TrackerService
                 'raw_data'      => $dados['raw_data'] ?? '',
             ]);
 
+            Log::info("[TrackerService] Posição recebida", [
+                'imei'      => $dados['imei'],
+                'lat'       => $dados['latitude'],
+                'lon'       => $dados['longitude'],
+                'vel'       => $dados['velocidade'] . ' km/h',
+                'sinal'     => $dados['sinal_gps']
+            ]);
+
             $this->processEvents($rastreador, $posicao, $dados);
         });
     }
