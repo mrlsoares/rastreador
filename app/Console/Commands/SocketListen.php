@@ -66,65 +66,51 @@ class SocketListen extends Command
             // Obtém IP do cliente
             socket_getpeername($cliente, $ip, $porta_cliente);
 
+            // Tempo limite de leitura (para não travar o servidor em uma única conexão morta)
+            socket_set_option($cliente, SOL_SOCKET, SO_RCVTIMEO, ['sec' => 30, 'usec' => 0]);
+
             $isHeartbeat = false;
 
             try {
-                // Lê dados — Para binário (GT06) não podemos usar PHP_NORMAL_READ
-                $dados = @socket_read($cliente, 4096, PHP_BINARY_READ);
+                // Loop para manter a conexão aberta e processar múltiplos pacotes do mesmo rastreador
+                while (true) {
+                    $dados = @socket_read($cliente, 4096, PHP_BINARY_READ);
 
-                if ($dados === false || $dados === '') {
-                    socket_close($cliente);
-                    continue;
-                }
+                    if ($dados === false || $dados === '') {
+                        break;
+                    }
 
-                $isGt06 = str_starts_with($dados, Gt06Parser::START_BIT);
-                $raw = $isGt06 ? $dados : trim($dados);
-                
-                $isHeartbeat = false;
-                if (!$isGt06) {
-                    $isHeartbeat = strtolower($raw) === 'xx';
-                }
-                
-                // Apenas logamos a conexão e a recepção se não for um heartbeat rotineiro
-                if (!$isHeartbeat) {
-                    $this->line("[Socket] Nova conexão de: {$ip}:{$porta_cliente} | Protocolo: " . ($isGt06 ? 'GT06 (Binário)' : 'TRX-16 (ASCII)'));
-                    Log::info('[Socket] Nova conexão recebida', [
-                        'ip'            => $ip,
-                        'protocolo'     => $isGt06 ? 'GT06' : 'TRX-16',
-                        'porta_cliente' => $porta_cliente,
-                    ]);
+                    $isGt06 = str_starts_with($dados, Gt06Parser::START_BIT);
+                    $raw = $isGt06 ? $dados : trim($dados);
                     
-                    $displayRaw = $isGt06 ? bin2hex($raw) : $raw;
-                    $this->line("[Socket] Dados recebidos de {$ip}: {$displayRaw}");
-                    Log::info('[Socket] Frame recebido', [
-                        'ip'          => $ip,
-                        'raw'         => $displayRaw,
-                        'bytes'       => strlen($raw),
-                        'recebido_em' => now()->toDateTimeString(),
-                    ]);
-                }
+                    $isHeartbeat = false;
+                    if (!$isGt06) {
+                        $isHeartbeat = strtolower($raw) === 'xx';
+                    }
+                    
+                    if (!$isHeartbeat) {
+                        $this->line("[Socket] Dados de {$ip}:" . ($isGt06 ? bin2hex($raw) : $raw));
+                        Log::info('[Socket] Nova mensagem', [
+                            'ip'        => $ip,
+                            'protocolo' => $isGt06 ? 'GT06' : 'TRX-16',
+                            'raw'       => $isGt06 ? bin2hex($raw) : $raw,
+                        ]);
+                    }
 
-                $resposta = $this->processarDados($raw, $ip, $isGt06);
-                
-                if ($resposta) {
-                    socket_write($cliente, $resposta);
-                }
-                
-                if (!$isHeartbeat && !$isGt06) {
-                    Log::info('[Socket] Resposta enviada', ['ip' => $ip]);
+                    $resposta = $this->processarDados($raw, $ip, $isGt06);
+                    
+                    if ($resposta) {
+                        socket_write($cliente, $resposta);
+                    }
                 }
             } catch (\Throwable $e) {
-                Log::error('[Socket] Erro ao processar frame', [
+                Log::error('[Socket] Erro na conexão', [
                     'ip'    => $ip,
-                    'raw'   => $raw ?? '',
                     'erro'  => $e->getMessage(),
                 ]);
-                @socket_write($cliente, "ERR\r\n");
             } finally {
                 @socket_close($cliente);
-                if (!$isHeartbeat) {
-                    Log::info('[Socket] Conexão encerrada', ['ip' => $ip]);
-                }
+                Log::info('[Socket] Conexão encerrada', ['ip' => $ip]);
             }
         }
 
@@ -229,28 +215,46 @@ class SocketListen extends Command
 
             $this->info("[Socket] Posição salva → IMEI: {$dados['imei']} | {$dados['latitude']},{$dados['longitude']} | {$dados['velocidade']}km/h");
 
-            // Processa eventos (flags de bit)
-            if ($dados['evento_codigo'] !== '0000') {
-                $eventos = TrxParser::decodeEventos($dados['evento_codigo']);
+            // Processa eventos (flags de bit para TRX ou campos diretos para GT06)
+            $eventosParaSalvar = [];
 
-                foreach ($eventos as $evento) {
-                    Evento::create([
-                        'rastreador_id' => $rastreador->id,
-                        'posicao_id'    => $posicao->id,
-                        'tipo'          => $evento['tipo'],
-                        'descricao'     => $evento['descricao'],
-                        'codigo_raw'    => $dados['evento_codigo'],
-                    ]);
-
-                    $this->warn("[Socket] Evento: {$evento['tipo']} — {$evento['descricao']}");
-                    Log::warning('[Socket] Evento detectado', [
-                        'imei'       => $dados['imei'],
-                        'posicao_id' => $posicao->id,
-                        'tipo'       => $evento['tipo'],
-                        'descricao'  => $evento['descricao'],
-                        'codigo_raw' => $dados['evento_codigo'],
-                    ]);
+            if ($isGt06) {
+                // Eventos específicos de alarme (SOS, etc)
+                if (isset($dados['evento_tipo'])) {
+                    $eventosParaSalvar[] = [
+                        'tipo' => $dados['evento_tipo'],
+                        'descricao' => $dados['evento_descricao'],
+                    ];
                 }
+                
+                // Evento de ignição embutido na localização
+                if (isset($dados['evento_codigo']) && $dados['evento_codigo'] !== '0000') {
+                    $eventosParaSalvar = array_merge($eventosParaSalvar, TrxParser::decodeEventos($dados['evento_codigo']));
+                }
+            } else {
+                // TRX-16 usa o campo evento_codigo padrão
+                if ($dados['evento_codigo'] !== '0000') {
+                    $eventosParaSalvar = TrxParser::decodeEventos($dados['evento_codigo']);
+                }
+            }
+
+            foreach ($eventosParaSalvar as $evento) {
+                Evento::create([
+                    'rastreador_id' => $rastreador->id,
+                    'posicao_id'    => $posicao->id,
+                    'tipo'          => $evento['tipo'],
+                    'descricao'     => $evento['descricao'],
+                    'codigo_raw'    => $dados['evento_codigo'] ?? '0000',
+                ]);
+
+                $this->warn("[Socket] Evento: {$evento['tipo']} — {$evento['descricao']}");
+                Log::warning('[Socket] Evento detectado', [
+                    'imei'       => $dados['imei'],
+                    'posicao_id' => $posicao->id,
+                    'tipo'       => $evento['tipo'],
+                    'descricao'  => $evento['descricao'],
+                    'codigo_raw' => $dados['evento_codigo'] ?? '0000',
+                ]);
             }
         });
 

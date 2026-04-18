@@ -40,6 +40,8 @@ class Gt06Parser
                 return self::parseLogin($content, $raw);
             case self::PROTOCOL_LOCATION:
                 return self::parseLocation($content, $raw);
+            case self::PROTOCOL_ALARM:
+                return self::parseAlarm($content, $raw);
             case self::PROTOCOL_STATUS:
                 return self::parseStatus($content, $raw);
             default:
@@ -90,6 +92,11 @@ class Gt06Parser
         if (!($status & 0x04)) $latitude = -$latitude;
         if ($status & 0x08) $longitude = -$longitude;
 
+        // Ignição (Bit 1 do byte de status do terminal) em alguns modelos
+        // Em outros modelos o status do terminal vem em pacote separado (0x13)
+        // Por padrão, muitos GT06 enviam status de ignição no byte 17 do frame 0x12
+        $ignicao = ($status & 0x02) ? '0001' : '0002'; // 0001 = ON, 0002 = OFF (TRX compat)
+
         return [
             'tipo' => 'localizacao',
             'data_hora' => $dataHora,
@@ -98,9 +105,50 @@ class Gt06Parser
             'velocidade' => $gpsInfo['vel'],
             'angulo' => $gpsInfo['course'] & 0x3FF, // 10 bits
             'sinal_gps' => ($status & 0x30) >> 4,
-            'evento_codigo' => '0000',
+            'evento_codigo' => $ignicao,
             'raw_data' => bin2hex($raw)
         ];
+    }
+
+    /**
+     * Parseia pacote de Alarme/SOS (ID 0x16)
+     */
+    private static function parseAlarm(string $content, string $raw): ?array
+    {
+        // Alarme tem estrutura similar à localização + campos de alarme
+        $data = self::parseLocation($content, $raw);
+        if (!$data) return null;
+
+        // O byte de alarme aparece após o GPS e LBS
+        // Simplificando: buscamos o byte de tipo de alarme que no GT06 costuma ser SOS (0x01)
+        // No protocolo oficial, o byte de alarme está em uma posição variável se o LBS for variável,
+        // mas para muitos modelos chineses ele vem logo após o GPS Info (byte 18 do conteúdo)
+        $alarmByte = ord($content[strlen($content) - 1]); // Frequentemente o último byte antes do serial
+
+        $evento = 'ALARM_DESCONHECIDO';
+        $descricao = 'Alarme desconhecido';
+
+        switch ($alarmByte) {
+            case 0x01:
+                $evento = 'PANICO';
+                $descricao = 'Botão de Pânico acionado';
+                break;
+            case 0x02:
+                $evento = 'CORTE_ENERGIA';
+                $descricao = 'Alimentação externa cortada';
+                break;
+            case 0x03:
+                $evento = 'VIOLACAO';
+                $descricao = 'Alarme de vibração/choque';
+                break;
+        }
+
+        $data['tipo'] = 'alarme';
+        $data['evento_tipo'] = $evento;
+        $data['evento_descricao'] = $descricao;
+        $data['response'] = self::buildResponse(self::PROTOCOL_ALARM, $raw);
+
+        return $data;
     }
 
     /**
