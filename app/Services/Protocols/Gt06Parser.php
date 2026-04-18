@@ -116,9 +116,11 @@ class Gt06Parser implements ProtocolParserInterface
             'raw_data' => bin2hex($raw)
         ];
 
-        // Detecção de SOS no pacote de localização (Bit 2 do byte de status indica alarme)
-        if ($statusByte & 0x04) {
+        // Detecção de SOS no pacote de localização (Bits 3-5: Status do Alarme (001: SOS))
+        $statusBits = ($statusByte >> 3) & 0x07;
+        if ($statusBits === 0x01) {
             $data['evento_tipo'] = 'SOS';
+            $data['em_panico']   = true;
             $data['evento_descricao'] = 'Botão de pânico acionado';
         }
 
@@ -135,9 +137,12 @@ class Gt06Parser implements ProtocolParserInterface
         // GPS Info termina no byte 18 do conteúdo (0-17).
         // Byte 18: LBS Length
         // Byte 19: Alarm Type (se LBS Len for 0)
+        // Muitos trackers usam GPS(18) + LBS(8) + Alarme(1)
+        // Tentamos o offset 26 do conteúdo (Raw 30) se o cálculo de LBS falhar
         $lbsLen = ord($content[18] ?? "\0");
         $alarmTypeOffset = 19 + $lbsLen;
-        $alarmByte = ord($content[$alarmTypeOffset] ?? "\0");
+        $alarmByte = ord($content[$alarmTypeOffset] ?? $content[26] ?? "\0");
+        $alarmHex  = dechex($alarmByte);
 
         Log::info("[Gt06Parser] Pacote de Alarme recebido", [
             'raw' => bin2hex($raw),
@@ -183,8 +188,8 @@ class Gt06Parser implements ProtocolParserInterface
         $infoByte = ord($content[0]);
         $alarmBits = ($infoByte >> 3) & 0x07; // Bits 3, 4, 5
         
-        // SOS é o tipo 001, mas alguns trackers usam o bit 2 (0x04) para alarmes genéricos/SOS
-        $panico = ($alarmBits === 0x01) || ($infoByte & 0x04); 
+        // SOS é o tipo 001
+        $panico = ($alarmBits === 0x01);
         
         Log::info("[Gt06Parser] Status recebido", [
             'info_hex' => dechex($infoByte),
