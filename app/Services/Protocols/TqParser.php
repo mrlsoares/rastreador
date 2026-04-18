@@ -75,11 +75,12 @@ class TqParser implements ProtocolParserInterface
         $longitude = $this->parseBcdCoordinate($lonRaw, 3);
 
         // Detecção de Alerta no frame Binário
-        // Offset 32 parece ser o código do alerta (01=SOS, 02=SOS/Held?)
         $alertaBin = ord(substr($raw, 32, 1));
         $evento = null;
+        $descricao = null;
         if ($alertaBin === 0x01 || $alertaBin === 0x02) {
             $evento = 'SOS';
+            $descricao = 'Botão de pânico acionado';
         }
 
         Log::info("[TqParser] Packet Binary", [
@@ -93,15 +94,16 @@ class TqParser implements ProtocolParserInterface
         if ($longitude > 0) $longitude = -$longitude;
 
         return [
-            'tipo'          => $evento ? 'alerta' : 'localizacao',
-            'alerta'        => $evento,
-            'imei'          => $imei,
-            'data_hora'     => $dataHora,
-            'latitude'      => $latitude,
-            'longitude'     => $longitude,
-            'velocidade'    => 0,
-            'sinal_gps'     => 5,
-            'raw_data'      => $hex,
+            'tipo'              => $evento ? 'alerta' : 'localizacao',
+            'evento_tipo'       => $evento,
+            'evento_descricao'  => $descricao,
+            'imei'              => $imei,
+            'data_hora'         => $dataHora,
+            'latitude'          => $latitude,
+            'longitude'         => $longitude,
+            'velocidade'        => 0,
+            'sinal_gps'         => 5,
+            'raw_data'          => $hex,
         ];
     }
 
@@ -159,8 +161,10 @@ class TqParser implements ProtocolParserInterface
         if ($valid !== 'A' && $valid !== 'V') return null;
 
         $evento = null;
+        $descricao = null;
         if ($tipoPacket === 'V1' || $tipoPacket === 'V2' || $tipoPacket === 'EX') {
             $evento = 'SOS';
+            $descricao = 'Alerta de pânico comunicado por pacote ASCII';
         }
 
         try {
@@ -170,16 +174,17 @@ class TqParser implements ProtocolParserInterface
         }
 
         return [
-            'tipo'          => $evento ? 'alerta' : 'localizacao',
-            'alerta'        => $evento,
-            'imei'          => $imei,
-            'data_hora'     => $dataHora,
-            'latitude'      => $this->convertNmeaToDecimal($lat, $ns),
-            'longitude'     => $this->convertNmeaToDecimal($lon, $ew),
-            'velocidade'    => round($vel * 1.852, 2),
-            'angulo'        => (int) $course,
-            'sinal_gps'     => ($valid === 'A') ? 5 : 0,
-            'raw_data'      => $linha,
+            'tipo'              => $evento ? 'alerta' : 'localizacao',
+            'evento_tipo'       => $evento,
+            'evento_descricao'  => $descricao,
+            'imei'              => $imei,
+            'data_hora'         => $dataHora,
+            'latitude'          => $this->convertNmeaToDecimal($lat, $ns),
+            'longitude'         => $this->convertNmeaToDecimal($lon, $ew),
+            'velocidade'        => round($vel * 1.852, 2),
+            'angulo'            => (int) $course,
+            'sinal_gps'         => ($valid === 'A') ? 5 : 0,
+            'raw_data'          => $linha,
         ];
     }
 
