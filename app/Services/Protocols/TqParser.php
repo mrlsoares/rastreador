@@ -98,10 +98,12 @@ class TqParser implements ProtocolParserInterface
         if (strlen($bcd) < $digitosGraus) return null;
 
         $graus = (int) substr($bcd, 0, $digitosGraus);
-        $minutos = (float) substr($bcd, $digitosGraus);
-
-        // Ajuste para consistência com NMEA (as 4 últimas casas são decimais do minuto)
-        $minutos = $minutos / 10000;
+        $minutosRaw = substr($bcd, $digitosGraus);
+        
+        // Em NMEA, os minutos sempre têm 2 dígitos inteiros (MM.MMMM)
+        // Então dividimos pelo número de casas decimais (comprimento - 2)
+        $divisorMinutos = pow(10, strlen($minutosRaw) - 2);
+        $minutos = (float) $minutosRaw / $divisorMinutos;
 
         $decimal = $graus + ($minutos / 60);
 
