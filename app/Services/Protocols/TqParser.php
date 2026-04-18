@@ -43,8 +43,8 @@ class TqParser implements ProtocolParserInterface
     {
         $hex = bin2hex($raw);
         
-        // Baseado nos logs: $ <ID:5 bytes> <Time:3> <Date:3> <Lat:4> <Lon:5> ...
-        // raw_hex: 24 (20 31 85 95 28) (18 19 38) (18 04 26) (29 10 80 18) (06 05 10 87 86)...
+        // Baseado nos logs: $ <ID:5 bytes> <Time:3> <Date:3> <Lat:4> <Lon:4> ...
+        // raw_hex: 24 (20 31 85 95 28) (18 23 20) (18 04 26) (29 10 80 18) (06) (05 10 87 86)...
         
         // ID (5 bytes após "$"): 20 31 85 95 28 -> "2031859528"
         $idBin = substr($raw, 1, 5);
@@ -62,14 +62,16 @@ class TqParser implements ProtocolParserInterface
             $dataHora = now();
         }
 
-        // Parsing de Coordenadas BCD
-        $latRaw = bin2hex(substr($raw, 12, 4)); // "29108018"
-        $lonRaw = bin2hex(substr($raw, 16, 5)); // "0605108786" -> 60.5108786
+        // Parsing de Coordenadas BCD (NMEA DDMM.MMMM)
+        // Lat: 29108018 -> 29 deg, 10.8018 min
+        $latRaw = bin2hex(substr($raw, 12, 4)); 
+        // Lon: 05108786 -> 051 deg, 08.786 min (offset 17, 4 bytes)
+        $lonRaw = bin2hex(substr($raw, 17, 4)); 
 
-        $latitude = $this->parseBcdCoordinate($latRaw);
-        $longitude = $this->parseBcdCoordinate($lonRaw);
+        $latitude = $this->parseBcdCoordinate($latRaw, 2);
+        $longitude = $this->parseBcdCoordinate($lonRaw, 3);
 
-        // Hemisfério (Brasil é sempre S e W)
+        // Hemisfério (Brasil é sempre S e W no caso deste usuário)
         if ($latitude > 0) $latitude = -$latitude;
         if ($longitude > 0) $longitude = -$longitude;
 
@@ -79,25 +81,28 @@ class TqParser implements ProtocolParserInterface
             'data_hora'     => $dataHora,
             'latitude'      => $latitude,
             'longitude'     => $longitude,
-            'velocidade'    => 0, // A ser mapeado
+            'velocidade'    => 0,
             'sinal_gps'     => 5,
             'raw_data'      => $hex,
         ];
     }
 
-    private function parseBcdCoordinate(string $bcd): ?float
+    private function parseBcdCoordinate(string $bcd, int $digitosGraus): ?float
     {
-        // 29108018 -> 29.108018
-        // 0605108786 -> 60.5108786
+        // Ex: Lat: "29108018", 2 -> 29 + (10.8018 / 60)
+        // Ex: Lon: "05108786", 3 -> 051 + (08.786 / 60)
         
-        $val = (float) $bcd;
-        if (strlen($bcd) == 8) {
-            return $val / 1000000;
-        }
-        if (strlen($bcd) >= 10) {
-            return $val / 10000000; 
-        }
-        return $val;
+        if (strlen($bcd) < $digitosGraus) return null;
+
+        $graus = (int) substr($bcd, 0, $digitosGraus);
+        $minutos = (float) substr($bcd, $digitosGraus);
+
+        // Ajuste para consistência com NMEA (as 4 últimas casas são decimais do minuto)
+        $minutos = $minutos / 10000;
+
+        $decimal = $graus + ($minutos / 60);
+
+        return round($decimal, 6);
     }
 
     private function parseH02(string $linha, string $raw): ?array
