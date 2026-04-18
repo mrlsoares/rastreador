@@ -35,17 +35,26 @@ class Jt808Parser implements ProtocolParserInterface
             return null;
         }
 
-        $msgId = unpack('n', substr($data, 1, 2))[1];
-        $attr  = unpack('n', substr($data, 3, 2))[1];
-        $terminalId = bin2hex(substr($data, 5, 6)); // Terminal ID é BCD
+        $terminalIdRaw = bin2hex(substr($data, 5, 6)); 
+        
+        // Unifica o IMEI: Mantém o sufixo de 10 dígitos e aplica o prefixo padrão 86802
+        $suffix = substr($terminalIdRaw, -10);
+        $terminalId = '86802' . $suffix;
+
         $seq   = unpack('n', substr($data, 11, 2))[1];
         
         $bodyLength = $attr & 0x03FF;
         $body = substr($data, 13, $bodyLength);
 
+        // Extrai Alarme e Status para o log
+        $alarmBin = (strlen($body) >= 4) ? unpack('N', substr($body, 0, 4))[1] : 0;
+        $statusBin = (strlen($body) >= 8) ? unpack('N', substr($body, 4, 4))[1] : 0;
+
         Log::info("[Jt808Parser] Mensagem recebida", [
             'id' => dechex($msgId),
             'imei' => $terminalId,
+            'alarm_hex' => dechex($alarmBin),
+            'status_hex' => dechex($statusBin),
             'seq' => $seq,
             'len' => $bodyLength
         ]);
