@@ -172,7 +172,12 @@ if (coordenadas.length > 1) {
 }
 
 // Ajusta zoom para o percurso
-mapaHistorico.fitBounds(L.polyline(coordenadas).getBounds().pad(.1));
+if (coordenadas.length === 1) {
+    mapaHistorico.setView(coordenadas[0], 16);
+} else if (coordenadas.length > 1) {
+    mapaHistorico.fitBounds(L.polyline(coordenadas).getBounds().pad(.1));
+    if (mapaHistorico.getZoom() > 17) mapaHistorico.setZoom(17);
+}
 @endif
 </script>
 @endpush

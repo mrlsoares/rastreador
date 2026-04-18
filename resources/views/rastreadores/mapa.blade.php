@@ -149,7 +149,14 @@ function adicionarMarcadores(dados) {
     // Ajusta zoom para exibir todos os marcadores
     if (Object.keys(marcadores).length > 0) {
         const grupo = L.featureGroup(Object.values(marcadores));
-        map.fitBounds(grupo.getBounds().pad(.2));
+        // Se houver apenas 1, centraliza no 1. Se mais, fitBounds.
+        if (Object.keys(marcadores).length === 1) {
+            const m = Object.values(marcadores)[0];
+            map.setView(m.getLatLng(), 15);
+        } else {
+            map.fitBounds(grupo.getBounds().pad(.2));
+            if (map.getZoom() > 16) map.setZoom(16); // Evita zoom excessivo
+        }
     }
 }
 
