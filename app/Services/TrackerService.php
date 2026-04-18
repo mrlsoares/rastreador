@@ -143,9 +143,18 @@ class TrackerService
             ]);
         }
 
-        // Também verifica se o parser enviou a flag em_panico explicitamente (ex: pacote de status)
-        if (isset($dados['em_panico']) && $dados['em_panico']) {
-            $rastreador->update(['em_panico' => true]);
+        // Sincroniza estado de pânico se o parser enviar a flag (ex: pacotes de status ou alarme fim)
+        if (isset($dados['em_panico'])) {
+            $novoEstado = (bool)$dados['em_panico'];
+            if ($rastreador->em_panico !== $novoEstado) {
+                Log::info("[TrackerService] Mudança de estado SOS", [
+                    'imei' => $rastreador->imei,
+                    'anterior' => $rastreador->em_panico,
+                    'novo' => $novoEstado,
+                    'origem' => $dados['evento_tipo'] ?? 'STATUS'
+                ]);
+                $rastreador->update(['em_panico' => $novoEstado]);
+            }
         }
 
         // Caso especial: Marcamos como pânico se detectado, 
