@@ -13,6 +13,17 @@
     .popup-title { font-weight: 700; font-size: .9rem; color: #0ea5e9; margin-bottom: .4rem; }
     .popup-row   { font-size: .8rem; color: #94a3b8; margin: .2rem 0; }
     .popup-row span { color: #e2e8f0; font-weight: 500; }
+    .badge-status {
+        padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+    }
+    .badge-on { background: #059669; color: #fff; }
+    .badge-off { background: #4b5563; color: #fff; }
+    .badge-panic { background: #dc2626; color: #fff; animation: pulse-red 2s infinite; }
+    @keyframes pulse-red {
+        0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+    }
 </style>
 @endpush
 
@@ -57,28 +68,44 @@ const map = L.map('map', {
     zoomControl: true,
 });
 
-// Tile layer OpenStreetMap (sem API key necessária)
+// Tile layer OpenStreetMap
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
     maxZoom: 19,
 }).addTo(map);
 
-// Ícone personalizado para rastreador
-const iconePadrao = L.divIcon({
-    html: `<div style="
-        width:32px; height:32px;
-        background:linear-gradient(135deg,#0ea5e9,#0284c7);
-        border:3px solid #fff;
-        border-radius:50%;
-        display:flex; align-items:center; justify-content:center;
-        box-shadow:0 2px 8px rgba(0,0,0,.5);
-        font-size:13px; color:#fff;
-    "><i class="fas fa-truck"></i></div>`,
-    className: '',
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -18],
-});
+// Função para criar ícone baseado no status
+function criarIcone(r) {
+    let cor1 = "#0ea5e9";
+    let cor2 = "#0284c7";
+    let pulse = "";
+
+    if (r.em_panico) {
+        cor1 = "#ef4444";
+        cor2 = "#b91c1c";
+        pulse = "animation: pulse-red 1.5s infinite;";
+    } else if (!r.ignicao) {
+        cor1 = "#94a3b8";
+        cor2 = "#475569";
+    }
+
+    return L.divIcon({
+        html: `<div style="
+            width:32px; height:32px;
+            background:linear-gradient(135deg,${cor1},${cor2});
+            border:3px solid #fff;
+            border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            box-shadow:0 2px 8px rgba(0,0,0,.5);
+            font-size:13px; color:#fff;
+            ${pulse}
+        "><i class="fas fa-truck"></i></div>`,
+        className: '',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -18],
+    });
+}
 
 const marcadores    = {};
 const camadaMarcadores = L.layerGroup().addTo(map);
@@ -89,13 +116,23 @@ function adicionarMarcadores(dados) {
     dados.forEach(r => {
         if (!r.lat || !r.lon) return;
 
-        const marker = L.marker([r.lat, r.lon], { icon: iconePadrao })
+        const ignicaoBadge = r.ignicao 
+            ? '<span class="badge-status badge-on">Ligada</span>' 
+            : '<span class="badge-status badge-off">Desligada</span>';
+        
+        const panicBadge = r.em_panico 
+            ? '<div style="margin-bottom:0.5rem"><span class="badge-status badge-panic">⚠️ EM PÂNICO</span></div>' 
+            : '';
+
+        const marker = L.marker([r.lat, r.lon], { icon: criarIcone(r) })
             .bindPopup(`
                 <div class="popup-title">
                     <i class="fas fa-truck"></i> ${r.nome}
                 </div>
+                ${panicBadge}
+                <div class="popup-row">IMEI: <span>${r.imei}</span></div>
                 ${r.placa ? `<div class="popup-row">Placa: <span>${r.placa}</span></div>` : ''}
-                <div class="popup-row">Lat/Lon: <span>${r.lat.toFixed(6)}, ${r.lon.toFixed(6)}</span></div>
+                <div class="popup-row">Ignição: <span>${ignicaoBadge}</span></div>
                 <div class="popup-row">Velocidade: <span>${r.velocidade ?? 0} km/h</span></div>
                 <div class="popup-row">Últ. contato: <span>${r.data_hora ?? '—'}</span></div>
                 <div style="margin-top:.6rem">

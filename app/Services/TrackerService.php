@@ -108,8 +108,12 @@ class TrackerService
         foreach ($eventosBrutos as $evento) {
             $tipo = $evento['tipo'];
 
+            // Atualiza estado de Pânico no modelo Rastreador
+            if (in_array($tipo, ['SOS', 'PANICO'])) {
+                $rastreador->update(['em_panico' => true]);
+            }
+
             // Regra de Ouro: Apenas salvamos mudanças de estado para Ignição
-            // Isso evita logs infinitos enquanto o rastreador reporta a mesma posição
             if (in_array($tipo, ['IGNICAO_ON', 'IGNICAO_OFF'])) {
                 $cacheKey = "tracker_status_ignicao_{$rastreador->imei}";
                 $ultimoStatus = Cache::get($cacheKey);
@@ -118,7 +122,10 @@ class TrackerService
                     continue; // Ignora se o estado não mudou
                 }
 
-                Cache::put($cacheKey, $tipo, 86400); // Salva o novo estado por 1 dia
+                Cache::put($cacheKey, $tipo, 86400);
+                
+                // Atualiza o estado no modelo para o Mapa
+                $rastreador->update(['ignicao' => ($tipo === 'IGNICAO_ON')]);
             }
 
             Evento::create([
@@ -133,6 +140,13 @@ class TrackerService
                 'imei' => $rastreador->imei,
                 'tipo' => $tipo
             ]);
+        }
+
+        // Caso especial: Reset de pânico se o pacote de localização não contém mais o bit de SOS
+        // (Isso se aplica a protocolos como GT06 e JT808 que mandam o status em tempo real)
+        $temSosNoPacote = collect($eventosBrutos)->whereIn('tipo', ['SOS', 'PANICO'])->isNotEmpty();
+        if (!$temSosNoPacote && $rastreador->em_panico) {
+            $rastreador->update(['em_panico' => false]);
         }
     }
 }

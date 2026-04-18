@@ -41,13 +41,16 @@ class PosicaoController extends Controller
 
         // Última posição de cada rastreador para os marcadores do mapa
         $ultimasPosicoes = $rastreadores->map(fn($r) => [
-            'id'        => $r->id,
-            'nome'      => $r->nome,
-            'placa'     => $r->placa,
-            'lat'       => optional($r->posicoes->first())->latitude,
-            'lon'       => optional($r->posicoes->first())->longitude,
-            'velocidade'=> optional($r->posicoes->first())->velocidade,
-            'data_hora' => optional($r->posicoes->first())?->data_hora?->format('d/m/Y H:i:s'),
+            'id'         => $r->id,
+            'imei'       => $r->imei,
+            'nome'       => $r->nome,
+            'placa'      => $r->placa,
+            'ignicao'    => $r->ignicao,
+            'em_panico'  => $r->em_panico,
+            'lat'        => optional($r->posicoes->first())->latitude,
+            'lon'        => optional($r->posicoes->first())->longitude,
+            'velocidade' => optional($r->posicoes->first())->velocidade,
+            'data_hora'  => optional($r->posicoes->first())?->data_hora?->format('d/m/Y H:i:s'),
         ])->filter(fn($r) => $r['lat'] && $r['lon'])->values();
 
         return view('rastreadores.mapa', compact('rastreadores', 'ultimasPosicoes'));

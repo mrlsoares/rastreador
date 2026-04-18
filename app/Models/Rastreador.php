@@ -17,11 +17,15 @@ class Rastreador extends Model
         'modelo_veiculo',
         'descricao',
         'ativo',
+        'ignicao',
+        'em_panico',
         'ultimo_contato',
     ];
 
     protected $casts = [
         'ativo'          => 'boolean',
+        'ignicao'        => 'boolean',
+        'em_panico'      => 'boolean',
         'ultimo_contato' => 'datetime',
     ];
 
