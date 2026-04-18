@@ -142,7 +142,7 @@ class TqParser implements ProtocolParserInterface
 
         return [
             'tipo'          => 'localizacao',
-            'imei'          => $id,
+            'imei'          => $imei,
             'data_hora'     => $dataHora,
             'latitude'      => $this->convertNmeaToDecimal($lat, $ns),
             'longitude'     => $this->convertNmeaToDecimal($lon, $ew),
