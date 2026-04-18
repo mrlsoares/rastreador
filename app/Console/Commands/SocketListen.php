@@ -71,6 +71,14 @@ class SocketListen extends Command
                         continue;
                     }
 
+                    $hex = bin2hex($dados);
+                    $this->line("[Socket] Dados de {$ip} [{$parser->getName()}]: {$hex}");
+                    Log::info('[Socket] Nova mensagem', [
+                        'ip'        => $ip,
+                        'protocolo' => $parser->getName(),
+                        'raw_hex'   => $hex,
+                    ]);
+
                     // Parseia os dados de acordo com o protocolo
                     $dadosFormatados = $parser->parse($dados);
 
