@@ -78,37 +78,52 @@ class TrackerService
     }
 
     /**
-     * Processa e salva eventos associados à posição.
+     * Processa e salva eventos associados à posição com detecção de mudança de estado.
      */
     protected function processEvents(Rastreador $rastreador, Posicao $posicao, array $dados): void
     {
-        $eventos = [];
+        $eventosBrutos = [];
 
         // Eventos mapeados por código (TRX/Bitmask)
         if (isset($dados['evento_codigo']) && $dados['evento_codigo'] !== '0000') {
-            $eventos = array_merge($eventos, TrxParser::decodeEventos($dados['evento_codigo']));
+            $eventosBrutos = array_merge($eventosBrutos, TrxParser::decodeEventos($dados['evento_codigo']));
         }
 
         // Eventos diretos (GT06 Alarme)
         if (isset($dados['evento_tipo'])) {
-            $eventos[] = [
+            $eventosBrutos[] = [
                 'tipo' => $dados['evento_tipo'],
                 'descricao' => $dados['evento_descricao'],
             ];
         }
 
-        foreach ($eventos as $evento) {
+        foreach ($eventosBrutos as $evento) {
+            $tipo = $evento['tipo'];
+
+            // Regra de Ouro: Apenas salvamos mudanças de estado para Ignição
+            // Isso evita logs infinitos enquanto o rastreador reporta a mesma posição
+            if (in_array($tipo, ['IGNICAO_ON', 'IGNICAO_OFF'])) {
+                $cacheKey = "tracker_status_ignicao_{$rastreador->imei}";
+                $ultimoStatus = Cache::get($cacheKey);
+
+                if ($ultimoStatus === $tipo) {
+                    continue; // Ignora se o estado não mudou
+                }
+
+                Cache::put($cacheKey, $tipo, 86400); // Salva o novo estado por 1 dia
+            }
+
             Evento::create([
                 'rastreador_id' => $rastreador->id,
                 'posicao_id'    => $posicao->id,
-                'tipo'          => $evento['tipo'],
+                'tipo'          => $tipo,
                 'descricao'     => $evento['descricao'],
                 'codigo_raw'    => $dados['evento_codigo'] ?? '0000',
             ]);
 
             Log::info("[TrackerService] Evento detectado", [
                 'imei' => $rastreador->imei,
-                'tipo' => $evento['tipo']
+                'tipo' => $tipo
             ]);
         }
     }
