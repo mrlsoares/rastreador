@@ -84,7 +84,8 @@ class Gt06Parser implements ProtocolParserInterface
         if (strlen($content) < 18) return null;
 
         $dt = unpack('C6', substr($content, 0, 6));
-        $dataHora = Carbon::create(2000 + $dt[1], $dt[2], $dt[3], $dt[4], $dt[5], $dt[6]);
+        $dataHora = Carbon::create(2000 + $dt[1], $dt[2], $dt[3], $dt[4], $dt[5], $dt[6], 'UTC')
+                          ->setTimezone('America/Sao_Paulo');
 
         $gpsInfo = unpack('Nlat/Nlon/Cvel/ncourse', substr($content, 7, 11));
         
@@ -124,9 +125,9 @@ class Gt06Parser implements ProtocolParserInterface
         return $data;
     }
 
-    private static function parseAlarm(string $content, string $raw): ?array
+    private function parseAlarm(string $content, string $raw): ?array
     {
-        $data = self::parseLocation($content, $raw);
+        $data = $this->parseLocation($content, $raw);
         if (!$data) return null;
 
         // No pacote 0x16, o byte de tipo de alarme é crucial.

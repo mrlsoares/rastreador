@@ -143,6 +143,11 @@ class TrackerService
             ]);
         }
 
+        // Também verifica se o parser enviou a flag em_panico explicitamente (ex: pacote de status)
+        if (isset($dados['em_panico']) && $dados['em_panico']) {
+            $rastreador->update(['em_panico' => true]);
+        }
+
         // Caso especial: Marcamos como pânico se detectado, 
         // mas não resetamos automaticamente apenas porque o pacote atual não o contém.
         // O reset deve vir de um evento específico ou comando.
