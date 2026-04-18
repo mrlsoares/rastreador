@@ -21,7 +21,7 @@ class PosicaoController extends Controller
         $posicoes = $rastreador->posicoes()
             ->validas()
             ->periodo($dataInicio, $dataFim)
-            ->orderBy('data_hora')
+            ->orderByDesc('data_hora')
             ->paginate(50)
             ->withQueryString();
 
