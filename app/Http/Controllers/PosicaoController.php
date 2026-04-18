@@ -44,14 +44,21 @@ class PosicaoController extends Controller
             'id'         => $r->id,
             'imei'       => $r->imei,
             'nome'       => $r->nome,
-            'placa'      => $r->placa,
-            'ignicao'    => $r->ignicao,
-            'em_panico'  => $r->em_panico,
-            'lat'        => optional($r->posicoes->first())->latitude,
-            'lon'        => optional($r->posicoes->first())->longitude,
-            'velocidade' => optional($r->posicoes->first())->velocidade,
-            'data_hora'  => optional($r->posicoes->first())?->data_hora?->format('d/m/Y H:i:s'),
-        ])->filter(fn($r) => $r['lat'] && $r['lon'])->values();
+        $ultimasPosicoes = $rastreadores->map(function($r) {
+            $ultima = $r->posicoes->first();
+            return [
+                'id'         => $r->id,
+                'imei'       => $r->imei,
+                'nome'       => $r->nome,
+                'placa'      => $r->placa,
+                'ignicao'    => $r->ignicao,
+                'em_panico'  => $r->em_panico,
+                'lat'        => optional($ultima)->latitude,
+                'lon'        => optional($ultima)->longitude,
+                'velocidade' => optional($ultima)->velocidade,
+                'data_hora'  => $ultima ? $ultima->data_hora->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i:s') : null,
+            ];
+        })->filter(fn($r) => $r['lat'] && $r['lon'])->values();
 
         return view('rastreadores.mapa', compact('rastreadores', 'ultimasPosicoes'));
     }
