@@ -97,7 +97,7 @@ class Gt06Parser implements ProtocolParserInterface
         // Bit 2: 1=N, 0=S
         // Bit 3: 1=E, 0=W
         if (!($status & 0x04)) $latitude = -$latitude;
-        if (!($status & 0x08)) $longitude = -$longitude;
+        if ($status & 0x08) $longitude = -$longitude;
 
         // ACC/Ignição: Bit 1 (0x02) em GT06
         $ignicao = ($status & 0x02) ? '0001' : '0002';
