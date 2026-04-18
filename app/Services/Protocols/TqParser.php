@@ -74,9 +74,18 @@ class TqParser implements ProtocolParserInterface
         $latitude = $this->parseBcdCoordinate($latRaw, 2);
         $longitude = $this->parseBcdCoordinate($lonRaw, 3);
 
+        // Detecção de Alerta no frame Binário
+        // Offset 32 parece ser o código do alerta (01=SOS, 02=SOS/Held?)
+        $alertaBin = ord(substr($raw, 32, 1));
+        $evento = null;
+        if ($alertaBin === 0x01 || $alertaBin === 0x02) {
+            $evento = 'SOS';
+        }
+
         Log::info("[TqParser] Packet Binary", [
-            'imei' => $imei,
-            'raw'  => $hex
+            'imei'   => $imei,
+            'alerta' => $alertaBin,
+            'raw'    => $hex
         ]);
 
         // Hemisfério (Brasil é sempre S e W no caso deste usuário)
@@ -84,7 +93,8 @@ class TqParser implements ProtocolParserInterface
         if ($longitude > 0) $longitude = -$longitude;
 
         return [
-            'tipo'          => 'localizacao',
+            'tipo'          => $evento ? 'alerta' : 'localizacao',
+            'alerta'        => $evento,
             'imei'          => $imei,
             'data_hora'     => $dataHora,
             'latitude'      => $latitude,
