@@ -39,7 +39,7 @@ class Jt808Parser implements ProtocolParserInterface
         $attr  = unpack('n', substr($data, 3, 2))[1];
         $terminalIdRaw = bin2hex(substr($data, 5, 6)); 
         
-        // Unifica o IMEI: Mantém o sufixo de 10 dígitos e aplica o prefixo padrão 86802
+        // Unifica o IMEI para o sistema: 86802 + sufixo de 10
         $suffix = substr($terminalIdRaw, -10);
         $terminalId = '86802' . $suffix;
 
@@ -55,6 +55,7 @@ class Jt808Parser implements ProtocolParserInterface
         Log::info("[Jt808Parser] Mensagem recebida", [
             'id' => dechex($msgId),
             'imei' => $terminalId,
+            'id_orig' => $terminalIdRaw,
             'alarm_hex' => dechex($alarmBin),
             'status_hex' => dechex($statusBin),
             'seq' => $seq,
@@ -63,20 +64,21 @@ class Jt808Parser implements ProtocolParserInterface
 
         switch ($msgId) {
             case 0x0100: // Registro de Terminal
-                return $this->handleRegistration($terminalId, $seq, $body, $raw);
+                return $this->handleRegistration($terminalId, $terminalIdRaw, $seq, $body, $raw);
             case 0x0102: // Autenticação de Terminal
-                return $this->handleAuthentication($terminalId, $seq, $raw);
+                return $this->handleAuthentication($terminalId, $terminalIdRaw, $seq, $raw);
             case 0x0002: // Heartbeat
-                return $this->handleHeartbeat($terminalId, $seq, $raw);
+                return $this->handleHeartbeat($terminalId, $terminalIdRaw, $seq, $raw);
             case 0x0200: // Reporte de Localização
-                return $this->handleLocation($terminalId, $seq, $body, $raw);
+                return $this->handleLocation($terminalId, $terminalIdRaw, $seq, $body, $raw);
             default:
                 return [
                     'tipo' => 'desconhecido',
                     'imei' => $terminalId,
+                    'terminal_id' => $terminalIdRaw,
                     'msg_id' => dechex($msgId),
                     'raw_data' => bin2hex($raw),
-                    'response' => $this->buildAck($msgId, $terminalId, $seq)
+                    'response' => $this->buildAck($msgId, $terminalIdRaw, $seq)
                 ];
         }
     }
@@ -86,7 +88,7 @@ class Jt808Parser implements ProtocolParserInterface
         return $dados['response'] ?? null;
     }
 
-    private function handleRegistration(string $imei, int $seq, string $body, string $raw): array
+    private function handleRegistration(string $imei, string $terminalIdRaw, int $seq, string $body, string $raw): array
     {
         // Resposta de Registro (0x8100)
         // Body: 2 bytes Seq + 1 byte Result (0=Sucesso) + String AuthCode
@@ -96,37 +98,40 @@ class Jt808Parser implements ProtocolParserInterface
         return [
             'tipo' => 'login',
             'imei' => $imei,
+            'terminal_id' => $terminalIdRaw,
             'raw_data' => bin2hex($raw),
-            'response' => $this->buildPacket(0x8100, $imei, $respBody)
+            'response' => $this->buildPacket(0x8100, $terminalIdRaw, $respBody)
         ];
     }
 
-    private function handleAuthentication(string $imei, int $seq, string $raw): array
+    private function handleAuthentication(string $imei, string $terminalIdRaw, int $seq, string $raw): array
     {
         return [
             'tipo' => 'login',
             'imei' => $imei,
+            'terminal_id' => $terminalIdRaw,
             'raw_data' => bin2hex($raw),
-            'response' => $this->buildAck(0x0102, $imei, $seq)
+            'response' => $this->buildAck(0x0102, $terminalIdRaw, $seq)
         ];
     }
 
-    private function handleHeartbeat(string $imei, int $seq, string $raw): array
+    private function handleHeartbeat(string $imei, string $terminalIdRaw, int $seq, string $raw): array
     {
         return [
             'tipo' => 'heartbeat',
             'imei' => $imei,
+            'terminal_id' => $terminalIdRaw,
             'raw_data' => bin2hex($raw),
-            'response' => $this->buildAck(0x0002, $imei, $seq)
+            'response' => $this->buildAck(0x0002, $terminalIdRaw, $seq)
         ];
     }
 
-    private function handleLocation(string $imei, int $seq, string $body, string $raw): ?array
+    private function handleLocation(string $imei, string $terminalIdRaw, int $seq, string $body, string $raw): ?array
     {
         if (strlen($body) < 28) return null;
 
-        $alarm  = unpack('N', substr($body, 0, 4))[1];
-        $status = unpack('N', substr($body, 4, 4))[1];
+        $alarm  = (int) unpack('N', substr($body, 0, 4))[1];
+        $status = (int) unpack('N', substr($body, 4, 4))[1];
         
         $latRaw = unpack('N', substr($body, 8, 4))[1];
         $lonRaw = unpack('N', substr($body, 12, 4))[1];
