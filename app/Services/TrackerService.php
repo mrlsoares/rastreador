@@ -143,11 +143,8 @@ class TrackerService
             ]);
         }
 
-        // Caso especial: Reset de pânico se o pacote de localização não contém mais o bit de SOS
-        // (Isso se aplica a protocolos como GT06 e JT808 que mandam o status em tempo real)
-        $temSosNoPacote = collect($eventosBrutos)->whereIn('tipo', ['SOS', 'PANICO'])->isNotEmpty();
-        if (!$temSosNoPacote && $rastreador->em_panico) {
-            $rastreador->update(['em_panico' => false]);
-        }
+        // Caso especial: Marcamos como pânico se detectado, 
+        // mas não resetamos automaticamente apenas porque o pacote atual não o contém.
+        // O reset deve vir de um evento específico ou comando.
     }
 }
