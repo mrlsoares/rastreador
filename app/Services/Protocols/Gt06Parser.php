@@ -181,7 +181,8 @@ class Gt06Parser implements ProtocolParserInterface
         $infoByte = ord($content[0]);
         $alarmBits = ($infoByte >> 3) & 0x07; // Bits 3, 4, 5
         
-        $panico = ($alarmBits === 0x01); // 001 = SOS
+        // SOS é o tipo 001, mas alguns trackers usam o bit 2 (0x04) para alarmes genéricos/SOS
+        $panico = ($alarmBits === 0x01) || ($infoByte & 0x04); 
         
         Log::info("[Gt06Parser] Status recebido", [
             'info_hex' => dechex($infoByte),
