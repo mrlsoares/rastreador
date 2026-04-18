@@ -88,12 +88,16 @@ class Gt06Parser implements ProtocolParserInterface
         $longitude = $gpsInfo['lon'] / 1800000;
         
         $status = ord($content[17]);
+        // Log::debug("[Gt06Parser] Status Byte: " . dechex($status));
+
+        // N/S E/W flags (Bits 2 e 3 do byte 17 em alguns modelos)
         if (!($status & 0x04)) $latitude = -$latitude;
         if ($status & 0x08) $longitude = -$longitude;
 
+        // ACC/Ignição: Bit 1 (0x02) é o padrão Concox GT06 para ACC no byte 17
         $ignicao = ($status & 0x02) ? '0001' : '0002';
 
-        return [
+        $data = [
             'tipo' => 'localizacao',
             'data_hora' => $dataHora,
             'latitude' => round($latitude, 6),
@@ -104,17 +108,40 @@ class Gt06Parser implements ProtocolParserInterface
             'evento_codigo' => $ignicao,
             'raw_data' => bin2hex($raw)
         ];
+
+        // Detecção de SOS no pacote de localização (Bit 2: Alarme, e bits de tipo)
+        // Alguns modelos enviam SOS constante no byte de status se o botão for pressionado
+        // Bit 2 (0x04) setado indica alarme. Tipos costumam vir no pacote 0x16, 
+        // mas vamos logar se detectarmos bit de alarme aqui.
+        if ($status & 0x04) {
+             Log::info("[Gt06Parser] Alarme detectado no byte de status", ['ip' => request()->ip(), 'status' => dechex($status)]);
+        }
+
+        return $data;
     }
 
-    private function parseAlarm(string $content, string $raw): ?array
+    private static function parseAlarm(string $content, string $raw): ?array
     {
-        $data = $this->parseLocation($content, $raw);
+        $data = self::parseLocation($content, $raw);
         if (!$data) return null;
 
-        $alarmByte = ord($content[strlen($content) - 1]);
+        // No pacote 0x16, o byte de tipo de alarme é crucial.
+        // Ele costuma vir após o LBS. Se LBS tem 0 bytes, ele vem logo após o GPS Info.
+        // GPS Info termina no byte 18 do conteúdo (0-17).
+        // Byte 18: LBS Length
+        // Byte 19: Alarm Type (se LBS Len for 0)
+        $lbsLen = ord($content[18] ?? "\0");
+        $alarmTypeOffset = 19 + $lbsLen;
+        $alarmByte = ord($content[$alarmTypeOffset] ?? "\0");
 
-        $evento = 'ALARM_DESCONHECIDO';
-        $descricao = 'Alarme desconhecido';
+        Log::info("[Gt06Parser] Pacote de Alarme recebido", [
+            'raw' => bin2hex($raw),
+            'alarm_byte' => dechex($alarmByte),
+            'offset' => $alarmTypeOffset
+        ]);
+
+        $evento = null;
+        $descricao = null;
 
         switch ($alarmByte) {
             case 0x01:
@@ -129,12 +156,18 @@ class Gt06Parser implements ProtocolParserInterface
                 $evento = 'VIOLACAO';
                 $descricao = 'Alarme de vibração/choque';
                 break;
+            case 0x00:
+                // Algumas vezes envia 0x00 para "Alarme Restituidor" ou fim de alarme
+                return $data; 
         }
 
-        $data['tipo'] = 'alarme';
-        $data['evento_tipo'] = $evento;
-        $data['evento_descricao'] = $descricao;
-        $data['response'] = $this->buildResponse(self::PROTO_ALARM, $raw);
+        if ($evento) {
+            $data['tipo'] = 'alarme';
+            $data['evento_tipo'] = $evento;
+            $data['evento_descricao'] = $descricao;
+        }
+
+        $data['response'] = self::buildResponse(self::PROTO_ALARM, $raw);
 
         return $data;
     }
