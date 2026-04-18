@@ -89,7 +89,7 @@ class TrackerService
     /**
      * Processa e salva eventos associados à posição com detecção de mudança de estado.
      */
-    protected function processEvents(Rastreador $rastreador, Posicao $posicao, array $dados): void
+    protected function processEvents(Rastreador $rastreador, ?Posicao $posicao, array $dados): void
     {
         $eventosBrutos = [];
 
