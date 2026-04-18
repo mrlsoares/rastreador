@@ -122,6 +122,12 @@ class Jt808Parser implements ProtocolParserInterface
         
         $latitude  = $latRaw / 1000000;
         $longitude = $lonRaw / 1000000;
+
+        // Hemisférios em JT808 (Status field)
+        // Bit 2: 0=N, 1=S
+        // Bit 3: 0=E, 1=W
+        if ($status & 0x04) $latitude = -$latitude;
+        if ($status & 0x08) $longitude = -$longitude;
         
         $alt    = unpack('n', substr($body, 16, 2))[1];
         $vel    = unpack('n', substr($body, 18, 2))[1] / 10;
