@@ -15,9 +15,9 @@ class ProtocolManager
     {
         // Registra os protocolos suportados
         $this->parsers[] = new Gt06Parser();
-        $this->parsers[] = new TrxParser();
         $this->parsers[] = new Jt808Parser();
         $this->parsers[] = new TqParser();
+        $this->parsers[] = new TrxParser();
     }
 
     /**
