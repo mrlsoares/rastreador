@@ -6,7 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Stub para o protocolo TQ (Topin/Watch).
+ * Parser para o protocolo TQ (Topin/Watch/H02).
  */
 class TqParser implements ProtocolParserInterface
 {
@@ -43,23 +43,18 @@ class TqParser implements ProtocolParserInterface
     {
         $hex = bin2hex($raw);
         
-        // Baseado nos logs: $ <ID:4 bytes> <Time:3> <Date:3> <Lat:4> <Lon:4> ...
-        // raw_hex: 24 20 31 85 95 28 18 15 46 18 04 26 29 10 80 18 06 05 10 87 86 ...
+        // Baseado nos logs: $ <ID:5 bytes> <Time:3> <Date:3> <Lat:4> <Lon:5> ...
+        // raw_hex: 24 (20 31 85 95 28) (18 19 38) (18 04 26) (29 10 80 18) (06 05 10 87 86)...
         
-        // ID (4 bytes após "$ "): 31 85 95 28
-        // Time (3 bytes): 18 15 46
-        // Date (3 bytes): 18 04 26
-        // Lat (4 bytes): 29 10 80 18
-        // Lon (4 bytes): 06 05 10 87 86... (pera, lon costuma ser maior)
-        
-        $idBin = substr($raw, 2, 4);
-        $id = bin2hex($idBin); // "31859528"
+        // ID (5 bytes após "$"): 20 31 85 95 28 -> "2031859528"
+        $idBin = substr($raw, 1, 5);
+        $id = bin2hex($idBin); 
         
         $horaBin = substr($raw, 6, 3);
-        $hora = bin2hex($horaBin); // "181546"
+        $hora = bin2hex($horaBin);
         
         $dataBin = substr($raw, 9, 3);
-        $data = bin2hex($dataBin); // "180426"
+        $data = bin2hex($dataBin);
 
         try {
             $dataHora = Carbon::createFromFormat('Hisdmy', $hora . $data);
@@ -67,9 +62,9 @@ class TqParser implements ProtocolParserInterface
             $dataHora = now();
         }
 
-        // Parsing de Coordenadas BCD (Topin style)
+        // Parsing de Coordenadas BCD
         $latRaw = bin2hex(substr($raw, 12, 4)); // "29108018"
-        $lonRaw = bin2hex(substr($raw, 16, 5)); // "0605108786" -> 051.08786?
+        $lonRaw = bin2hex(substr($raw, 16, 5)); // "0605108786" -> 60.5108786
 
         $latitude = $this->parseBcdCoordinate($latRaw);
         $longitude = $this->parseBcdCoordinate($lonRaw);
@@ -93,7 +88,7 @@ class TqParser implements ProtocolParserInterface
     private function parseBcdCoordinate(string $bcd): ?float
     {
         // 29108018 -> 29.108018
-        // 0605108786 -> 060.5108786? Ou 51.08786?
+        // 0605108786 -> 60.5108786
         
         $val = (float) $bcd;
         if (strlen($bcd) == 8) {
@@ -114,9 +109,9 @@ class TqParser implements ProtocolParserInterface
         }
 
         $id   = $partes[1];
-        $tipo = $partes[2]; // ex: V6
+        $tipo = $partes[2];
         $hora = $partes[3];
-        $valid = $partes[4]; // A ou V
+        $valid = $partes[4]; 
         $lat  = $partes[5];
         $ns   = $partes[6];
         $lon  = $partes[7];
@@ -135,11 +130,11 @@ class TqParser implements ProtocolParserInterface
 
         return [
             'tipo'          => 'localizacao',
-            'imei'          => $id, // TQ/H02 usa o ID diretamente (muitas vezes os últimos 10 dígitos do IMEI)
+            'imei'          => $id,
             'data_hora'     => $dataHora,
             'latitude'      => $this->convertNmeaToDecimal($lat, $ns),
             'longitude'     => $this->convertNmeaToDecimal($lon, $ew),
-            'velocidade'    => round($vel * 1.852, 2), // Knots para Km/h
+            'velocidade'    => round($vel * 1.852, 2),
             'angulo'        => (int) $course,
             'sinal_gps'     => ($valid === 'A') ? 5 : 0,
             'raw_data'      => $linha,
@@ -166,7 +161,6 @@ class TqParser implements ProtocolParserInterface
 
     public function getResponse(array $dados, string $raw): ?string
     {
-        // H02 geralmente não exige resposta para pacotes de localização simples
         return null;
     }
 }
