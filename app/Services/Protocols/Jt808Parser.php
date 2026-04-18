@@ -35,6 +35,8 @@ class Jt808Parser implements ProtocolParserInterface
             return null;
         }
 
+        $msgId = unpack('n', substr($data, 1, 2))[1];
+        $attr  = unpack('n', substr($data, 3, 2))[1];
         $terminalIdRaw = bin2hex(substr($data, 5, 6)); 
         
         // Unifica o IMEI: Mantém o sufixo de 10 dígitos e aplica o prefixo padrão 86802
