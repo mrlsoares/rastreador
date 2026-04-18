@@ -120,19 +120,19 @@ function adicionarMarcadores(dados) {
             ? '<span class="badge-status badge-on">Ligada</span>' 
             : '<span class="badge-status badge-off">Desligada</span>';
         
-        const panicBadge = r.em_panico 
-            ? '<div style="margin-bottom:0.5rem"><span class="badge-status badge-panic">⚠️ EM PÂNICO</span></div>' 
-            : '';
+        const sosBadge = r.em_panico 
+            ? '<span class="badge-status badge-panic">Ativado</span>' 
+            : '<span class="badge-status badge-off">Desativado</span>';
 
         const marker = L.marker([r.lat, r.lon], { icon: criarIcone(r) })
             .bindPopup(`
                 <div class="popup-title">
                     <i class="fas fa-truck"></i> ${r.nome}
                 </div>
-                ${panicBadge}
                 <div class="popup-row">IMEI: <span>${r.imei}</span></div>
                 ${r.placa ? `<div class="popup-row">Placa: <span>${r.placa}</span></div>` : ''}
                 <div class="popup-row">Ignição: <span>${ignicaoBadge}</span></div>
+                <div class="popup-row">Botão SOS: <span>${sosBadge}</span></div>
                 <div class="popup-row">Velocidade: <span>${r.velocidade ?? 0} km/h</span></div>
                 <div class="popup-row">Últ. contato: <span>${r.data_hora ?? '—'}</span></div>
                 <div style="margin-top:.6rem">
