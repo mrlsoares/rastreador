@@ -35,13 +35,13 @@ class PosicaoController extends Controller
     public function mapa(Request $request)
     {
         $rastreadores = Rastreador::ativos()
-            ->with(['posicoes' => fn($q) => $q->latest('data_hora')->limit(1)])
+            ->with(['ultimaPosicao'])
             ->orderBy('nome')
             ->get();
 
         // Última posição de cada rastreador para os marcadores do mapa
         $ultimasPosicoes = $rastreadores->map(function($r) {
-            $ultima = $r->posicoes->first();
+            $ultima = $r->ultimaPosicao;
             if (!$ultima || !$ultima->latitude || !$ultima->longitude) {
                 return null;
             }
