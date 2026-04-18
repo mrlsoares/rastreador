@@ -35,30 +35,30 @@ class PosicaoController extends Controller
     public function mapa(Request $request)
     {
         $rastreadores = Rastreador::ativos()
-            ->with(['posicoes' => fn($q) => $q->validas()->latest('data_hora')->limit(1)])
+            ->with(['posicoes' => fn($q) => $q->latest('data_hora')->limit(1)])
             ->orderBy('nome')
             ->get();
 
         // Última posição de cada rastreador para os marcadores do mapa
-        $ultimasPosicoes = $rastreadores->map(fn($r) => [
-            'id'         => $r->id,
-            'imei'       => $r->imei,
-            'nome'       => $r->nome,
         $ultimasPosicoes = $rastreadores->map(function($r) {
             $ultima = $r->posicoes->first();
+            if (!$ultima || !$ultima->latitude || !$ultima->longitude) {
+                return null;
+            }
+
             return [
                 'id'         => $r->id,
                 'imei'       => $r->imei,
                 'nome'       => $r->nome,
                 'placa'      => $r->placa,
-                'ignicao'    => $r->ignicao,
-                'em_panico'  => $r->em_panico,
-                'lat'        => optional($ultima)->latitude,
-                'lon'        => optional($ultima)->longitude,
-                'velocidade' => optional($ultima)->velocidade,
-                'data_hora'  => $ultima ? $ultima->data_hora->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i:s') : null,
+                'ignicao'    => (bool)$r->ignicao,
+                'em_panico'  => (bool)$r->em_panico,
+                'lat'        => (float)$ultima->latitude,
+                'lon'        => (float)$ultima->longitude,
+                'velocidade' => (int)$ultima->velocidade,
+                'data_hora'  => $ultima->data_hora->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i:s'),
             ];
-        })->filter(fn($r) => $r['lat'] && $r['lon'])->values();
+        })->filter()->values();
 
         return view('rastreadores.mapa', compact('rastreadores', 'ultimasPosicoes'));
     }

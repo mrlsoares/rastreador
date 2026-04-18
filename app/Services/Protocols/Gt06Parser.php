@@ -162,7 +162,8 @@ class Gt06Parser implements ProtocolParserInterface
                 $descricao = 'Alarme de vibração/choque';
                 break;
             case 0x00:
-                // Algumas vezes envia 0x00 para "Alarme Restituidor" ou fim de alarme
+                // Alarme Restituidor / Fim de Alarme
+                $data['em_panico'] = false;
                 return $data; 
         }
 
