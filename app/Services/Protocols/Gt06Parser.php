@@ -137,13 +137,11 @@ class Gt06Parser implements ProtocolParserInterface
             'angulo' => $gpsInfo['course'] & 0x3FF,
             'sinal_gps' => 5,
             'evento_codigo' => $ignicao,
-            'raw_data' => bin2hex($raw)
+            'raw_data' => bin2hex($raw),
             'statusByte' => $statusByte,
             'statusBits' => $statusBits,
-            'ignicao' => $ignicao,
-            'panico' => $panico,
-            'evento_tipo' => $evento,
-            'evento_descricao' => $descricao
+            'ignicao' => $data['ignicao'] ?? null,
+            'panico' => $data['em_panico'] ?? false,
         ]); 
 
         return $data;
