@@ -65,7 +65,11 @@ class Gt06Parser implements ProtocolParserInterface
     private function parseLogin(string $content, string $raw): array
     {
         $imeiRaw = substr($content, 0, 8);
-        $imei = self::bcdToText($imeiRaw);
+        $fullImei = self::bcdToText($imeiRaw);
+        
+        // Unifica o IMEI: Mantém sufixo de 10 e aplica prefixo 86802
+        $suffix = substr($fullImei, -10);
+        $imei = '86802' . $suffix;
 
         return [
             'tipo' => 'login',
@@ -88,13 +92,14 @@ class Gt06Parser implements ProtocolParserInterface
         $longitude = $gpsInfo['lon'] / 1800000;
         
         $status = ord($content[17]);
-        // Log::debug("[Gt06Parser] Status Byte: " . dechex($status));
 
-        // N/S E/W flags (Bits 2 e 3 do byte 17 em alguns modelos)
+        // Hemisférios em GT06 (Byte 17 do conteúdo)
+        // Bit 2: 1=N, 0=S
+        // Bit 3: 1=E, 0=W
         if (!($status & 0x04)) $latitude = -$latitude;
-        if ($status & 0x08) $longitude = -$longitude;
+        if (!($status & 0x08)) $longitude = -$longitude;
 
-        // ACC/Ignição: Bit 1 (0x02) é o padrão Concox GT06 para ACC no byte 17
+        // ACC/Ignição: Bit 1 (0x02) em GT06
         $ignicao = ($status & 0x02) ? '0001' : '0002';
 
         $data = [
@@ -104,7 +109,7 @@ class Gt06Parser implements ProtocolParserInterface
             'longitude' => round($longitude, 6),
             'velocidade' => $gpsInfo['vel'],
             'angulo' => $gpsInfo['course'] & 0x3FF,
-            'sinal_gps' => ($status & 0x30) >> 4,
+            'sinal_gps' => 5, // Valor fixo se incerto, ou decodificar sats
             'evento_codigo' => $ignicao,
             'raw_data' => bin2hex($raw)
         ];
