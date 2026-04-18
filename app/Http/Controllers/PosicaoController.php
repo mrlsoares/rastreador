@@ -41,7 +41,8 @@ class PosicaoController extends Controller
 
         // Última posição de cada rastreador para os marcadores do mapa
         $ultimasPosicoes = $rastreadores->map(function($r) {
-            $ultima = $r->ultimaPosicao;
+            // Filtra posições no futuro (ghosting)
+            $ultima = $r->posicoes()->where('data_hora', '<=', now())->latest('data_hora')->first();
             if (!$ultima || !$ultima->latitude || !$ultima->longitude) {
                 return null;
             }
