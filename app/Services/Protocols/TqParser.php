@@ -48,8 +48,11 @@ class TqParser implements ProtocolParserInterface
         
         // ID (5 bytes após "$"): 20 31 85 95 28 -> "2031859528"
         $idBin = substr($raw, 1, 5);
-        $id = bin2hex($idBin); 
+        $idPartial = bin2hex($idBin); 
         
+        // Reconstrói o IMEI completo conforme informado pelo usuário
+        $imei = (strlen($idPartial) === 10) ? '86802' . $idPartial : $idPartial;
+
         $horaBin = substr($raw, 6, 3);
         $hora = bin2hex($horaBin);
         
@@ -77,7 +80,7 @@ class TqParser implements ProtocolParserInterface
 
         return [
             'tipo'          => 'localizacao',
-            'imei'          => $id,
+            'imei'          => $imei,
             'data_hora'     => $dataHora,
             'latitude'      => $latitude,
             'longitude'     => $longitude,
@@ -113,8 +116,12 @@ class TqParser implements ProtocolParserInterface
             return null;
         }
 
-        $id   = $partes[1];
-        $tipo = $partes[2];
+        $idPartial = $partes[1];
+        
+        // Reconstrói o IMEI completo conforme informado pelo usuário
+        $imei = (strlen($idPartial) === 10) ? '86802' . $idPartial : $idPartial;
+
+        $tipo = $partes[2]; 
         $hora = $partes[3];
         $valid = $partes[4]; 
         $lat  = $partes[5];
