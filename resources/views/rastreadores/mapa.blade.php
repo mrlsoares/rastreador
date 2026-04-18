@@ -19,7 +19,7 @@
     .badge-on { background: #059669; color: #fff; }
     .badge-off { background: #4b5563; color: #fff; }
     .badge-panic { background: #dc2626; color: #fff; animation: pulse-red 2s infinite; }
-    @keyframes pulse-red {
+    @@keyframes pulse-red {
         0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
         70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
         100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
