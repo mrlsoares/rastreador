@@ -123,6 +123,14 @@ class Jt808Parser implements ProtocolParserInterface
         $latitude  = $latRaw / 1000000;
         $longitude = $lonRaw / 1000000;
 
+        Log::info("[Jt808Parser] Coordenadas Brutas", [
+            'status_hex' => dechex($status),
+            'lat_bruta'  => $latitude,
+            'lon_bruta'  => $longitude,
+            'bit_S'      => ($status & 0x04) ? 'Sim' : 'Não',
+            'bit_W'      => ($status & 0x08) ? 'Sim' : 'Não'
+        ]);
+
         // Hemisférios em JT808 (Status field)
         // Bit 2: 0=N, 1=S
         // Bit 3: 0=E, 1=W
