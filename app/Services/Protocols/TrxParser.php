@@ -62,14 +62,12 @@ class TrxParser implements ProtocolParserInterface
 
         try {
             if (str_contains($data, '/')) {
-                $dataHora = Carbon::createFromFormat('d/m/Y H:i:s', "$data $hora", 'UTC')
-                                  ->setTimezone('America/Sao_Paulo');
+                $dataHora = Carbon::createFromFormat('d/m/Y H:i:s', "$data $hora", 'UTC');
             } else {
-                $dataHora = Carbon::createFromFormat('Y-m-d H:i:s', "$data $hora", 'UTC')
-                                  ->setTimezone('America/Sao_Paulo');
+                $dataHora = Carbon::createFromFormat('Y-m-d H:i:s', "$data $hora", 'UTC');
             }
         } catch (\Exception $e) {
-            $dataHora = now()->setTimezone('America/Sao_Paulo');
+            $dataHora = now();
         }
 
         return [

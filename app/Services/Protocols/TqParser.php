@@ -61,10 +61,9 @@ class TqParser implements ProtocolParserInterface
 
         try {
             // TQ costuma enviar UTC
-            $dataHora = Carbon::createFromFormat('Hisdmy', $hora . $data, 'UTC')
-                              ->setTimezone('America/Sao_Paulo');
+            $dataHora = Carbon::createFromFormat('Hisdmy', $hora . $data, 'UTC');
         } catch (\Exception $e) {
-            $dataHora = now()->setTimezone('America/Sao_Paulo');
+            $dataHora = now();
         }
 
         // Parsing de Coordenadas BCD (NMEA DDMM.MMMM)
@@ -170,10 +169,9 @@ class TqParser implements ProtocolParserInterface
         }
 
         try {
-            $dataHora = Carbon::createFromFormat('dmyHis', $data . $hora, 'UTC')
-                              ->setTimezone('America/Sao_Paulo');
+            $dataHora = Carbon::createFromFormat('dmyHis', $data . $hora, 'UTC');
         } catch (\Exception $e) {
-            $dataHora = now()->setTimezone('America/Sao_Paulo');
+            $dataHora = now();
         }
 
         return [

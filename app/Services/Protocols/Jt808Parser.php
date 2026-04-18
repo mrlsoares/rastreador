@@ -160,10 +160,9 @@ class Jt808Parser implements ProtocolParserInterface
         $dtRaw  = bin2hex(substr($body, 22, 6)); // BCD YYMMDDHHMMSS
         
         try {
-            $dataHora = Carbon::createFromFormat('ymdHis', $dtRaw, 'UTC')
-                              ->setTimezone('America/Sao_Paulo');
+            $dataHora = Carbon::createFromFormat('ymdHis', $dtRaw, 'UTC');
         } catch (\Exception $e) {
-            $dataHora = now()->setTimezone('America/Sao_Paulo');
+            $dataHora = now();
         }
 
         $evento = null;

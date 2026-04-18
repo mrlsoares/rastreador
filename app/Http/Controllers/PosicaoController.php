@@ -56,7 +56,7 @@ class PosicaoController extends Controller
                 'lat'        => (float)$ultima->latitude,
                 'lon'        => (float)$ultima->longitude,
                 'velocidade' => (int)$ultima->velocidade,
-                'data_hora'  => $ultima->data_hora->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i:s'),
+                'data_hora'  => $ultima->data_hora->format('d/m/Y H:i:s'),
             ];
         })->filter()->values();
 

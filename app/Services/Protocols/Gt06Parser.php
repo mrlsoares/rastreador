@@ -84,8 +84,7 @@ class Gt06Parser implements ProtocolParserInterface
         if (strlen($content) < 18) return null;
 
         $dt = unpack('C6', substr($content, 0, 6));
-        $dataHora = Carbon::create(2000 + $dt[1], $dt[2], $dt[3], $dt[4], $dt[5], $dt[6], 'UTC')
-                          ->setTimezone('America/Sao_Paulo');
+        $dataHora = Carbon::create(2000 + $dt[1], $dt[2], $dt[3], $dt[4], $dt[5], $dt[6], 'UTC');
 
         $gpsInfo = unpack('Nlat/Nlon/Cvel/ncourse', substr($content, 7, 11));
         
