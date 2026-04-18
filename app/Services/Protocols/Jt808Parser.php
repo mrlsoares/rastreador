@@ -190,7 +190,7 @@ class Jt808Parser implements ProtocolParserInterface
             'sinal_gps'         => 5,
             'evento_codigo'     => $ignicao,
             'raw_data'          => bin2hex($raw),
-            'response'          => $this->buildAck(0x0200, $imei, $seq)
+            'response'          => $this->buildAck(0x0200, $terminalIdRaw, $seq)
         ];
     }
 
