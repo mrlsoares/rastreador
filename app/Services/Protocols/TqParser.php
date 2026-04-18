@@ -123,7 +123,7 @@ class TqParser implements ProtocolParserInterface
         // Reconstrói o IMEI completo conforme informado pelo usuário
         $imei = (strlen($idPartial) === 10) ? '86802' . $idPartial : $idPartial;
 
-        $tipo = $partes[2]; 
+        $tipoPacket = $partes[2]; 
         $hora = $partes[3];
         $valid = $partes[4]; 
         $lat  = $partes[5];
@@ -133,6 +133,13 @@ class TqParser implements ProtocolParserInterface
         $vel  = (float) $partes[9];
         $course = (float) $partes[10];
         $data = $partes[11];
+        $status = $partes[12] ?? 'N/A';
+
+        Log::debug("[TqParser] Packet H02", [
+            'tipo'   => $tipoPacket,
+            'status' => $status,
+            'imei'   => $imei
+        ]);
 
         if ($valid !== 'A' && $valid !== 'V') return null;
 
