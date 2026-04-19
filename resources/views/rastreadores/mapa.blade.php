@@ -62,18 +62,22 @@ const camadaMarcadores = L.layerGroup();
 let primeiraCarga = true;
 
 // --- Configuração WebSocket (Reverb) ---
-window.Pusher = Pusher;
-window.Echo = new Echo({
-    broadcaster: 'reverb',
-    key: '{{ config('reverb.apps.0.key') }}',
-    wsHost: '{{ config('reverb.apps.0.options.host') }}',
-    wsPort: {{ config('reverb.apps.0.options.port') }},
-    wssPort: {{ config('reverb.apps.0.options.port') }},
-    forceTLS: {{ config('reverb.apps.0.options.scheme') === 'https' ? 'true' : 'false' }},
-    enabledTransports: ['ws', 'wss'],
-});
+try {
+    window.Pusher = Pusher;
+    window.Echo = new Echo({
+        broadcaster: 'reverb',
+        key: '{{ config('reverb.apps.0.key', '') }}',
+        wsHost: '{{ config('reverb.apps.0.options.host', 'localhost') }}',
+        wsPort: {{ config('reverb.apps.0.options.port', 8080) }},
+        wssPort: {{ config('reverb.apps.0.options.port', 8080) }},
+        forceTLS: {{ (config('reverb.apps.0.options.scheme') === 'https') ? 'true' : 'false' }},
+        enabledTransports: ['ws', 'wss'],
+    });
 
-console.log('Echo Inicializado:', '{{ config('reverb.apps.0.options.host') }}');
+    console.log('Echo Inicializado:', '{{ config('reverb.apps.0.options.host', 'localhost') }}');
+} catch (e) {
+    console.warn('Falha ao inicializar WebSockets. O mapa usará apenas Polling.', e);
+}
 
 // Inicializa mapa 
 const map = L.map('map', {
