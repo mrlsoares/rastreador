@@ -51,11 +51,27 @@
 @endsection
 
 @push('scripts')
+<!-- WebSockets: Pusher & Echo -->
+<script src="https://cdn.jsdelivr.net/npm/pusher-js@8.3.0/dist/web/pusher.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
+
 <script>
 let posicoes = @json($ultimasPosicoes);
 const marcadores = {};
 const camadaMarcadores = L.layerGroup();
 let primeiraCarga = true;
+
+// --- Configuração WebSocket (Reverb) ---
+window.Pusher = Pusher;
+window.Echo = new Echo({
+    broadcaster: 'reverb',
+    key: '{{ env('REVERB_APP_KEY') }}',
+    wsHost: '{{ env('REVERB_HOST', 'localhost') }}',
+    wsPort: {{ env('REVERB_PORT', 8080) }},
+    wssPort: {{ env('REVERB_PORT', 8080) }},
+    forceTLS: false,
+    enabledTransports: ['ws', 'wss'],
+});
 
 // Inicializa mapa 
 const map = L.map('map', {
@@ -71,17 +87,27 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 camadaMarcadores.addTo(map);
 
+function transformarItem(r) {
+    return {
+        id: r.id, imei: r.imei, nome: r.nome, placa: r.placa,
+        ignicao: !!r.ignicao, em_panico: !!r.em_panico,
+        lat: parseFloat(r.ultima_latitude || 0), 
+        lon: parseFloat(r.ultima_longitude || 0),
+        velocidade: parseInt(r.velocidade || 0),
+        data_hora: new Date().toLocaleString('pt-BR')
+    };
+}
+
 function transformarDadosApi(dados) {
     return dados.map(r => {
         const u = r.ultima_posicao;
         if (!u) return null;
-        return {
-            id: r.id, imei: r.imei, nome: r.nome, placa: r.placa,
-            ignicao: !!r.ignicao, em_panico: !!r.em_panico,
-            lat: parseFloat(u.latitude), lon: parseFloat(u.longitude),
-            velocidade: parseInt(u.velocidade),
-            data_hora: new Date(u.data_hora).toLocaleString('pt-BR')
-        };
+        const item = transformarItem(r);
+        item.lat = parseFloat(u.latitude);
+        item.lon = parseFloat(u.longitude);
+        item.velocidade = parseInt(u.velocidade);
+        item.data_hora = new Date(u.data_hora).toLocaleString('pt-BR');
+        return item;
     }).filter(f => f);
 }
 
@@ -151,6 +177,14 @@ function centrarMapa() {
     if (map.getZoom() > 16) map.setZoom(16);
 }
 
+// Ouvir WebSockets (Tempo Real)
+window.Echo.channel('rastreamento')
+    .listen('.sos.changed', (e) => {
+        console.log('Update WebSocket recebido:', e);
+        const item = transformarItem(e.rastreador);
+        adicionarMarcadores([item]);
+    });
+
 // Filtro
 document.getElementById('filtroRastreador').addEventListener('change', function() {
     const id = this.value;
@@ -159,9 +193,9 @@ document.getElementById('filtroRastreador').addEventListener('change', function(
     if (m) { map.setView(m.getLatLng(), 16); m.openPopup(); }
 });
 
-// Loop
+// Loop (Mantido como fallback caso o socket caia)
 adicionarMarcadores(posicoes);
-setInterval(atualizarMapa, 15000);
-setTimeout(atualizarMapa, 1000); // Força carga da API para data real
+setInterval(atualizarMapa, 30000); // Aumentado para 30s pois o WebSocket é o principal
+setTimeout(atualizarMapa, 1000);
 </script>
 @endpush
