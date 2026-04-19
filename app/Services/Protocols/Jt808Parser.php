@@ -196,10 +196,8 @@ class Jt808Parser implements ProtocolParserInterface
             'response'          => $this->buildAck(0x0200, $terminalIdRaw, $seq)
         ];
 
-        // Só enviamos em_panico se for verdadeiro para manter a persistência
-        if ($evento === 'SOS') {
-            $res['em_panico'] = true;
-        }
+        // Definimos em_panico explicitamente para suportar o reset automático solicitado pelo usuário
+        $res['em_panico'] = ($alarm & 0x01) ? true : false;
 
         return $res;
     }

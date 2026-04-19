@@ -162,25 +162,23 @@ class TrackerService
             $cacheKeySos = "tracker_status_sos_{$rastreador->imei}";
             $ultimoEstadoCache = Cache::get($cacheKeySos);
 
-            // Só processa se o estado em cache for diferente do novo (ou se não houver cache)
-            if ($ultimoEstadoCache !== $novoEstado) {
-                Log::info("[TrackerService] Mudança de estado SOS", [
+            // Regra Robusta: Atualiza se o banco estiver diferente OU o cache estiver diferente do novo estado
+            if ($rastreador->em_panico !== $novoEstado || $ultimoEstadoCache !== $novoEstado) {
+                Log::info("[TrackerService] Sincronizando estado SOS", [
                     'imei' => $rastreador->imei,
-                    'anterior' => $rastreador->em_panico,
-                    'novo' => $novoEstado,
-                    'origem' => $dados['evento_tipo'] ?? 'STATUS'
+                    'banco' => $rastreador->em_panico,
+                    'cache' => $ultimoEstadoCache,
+                    'novo' => $novoEstado
                 ]);
 
                 // Atualiza o banco
                 $rastreador->update(['em_panico' => $novoEstado]);
 
-                // Atualiza o cache (válido por 24h)
-                Cache::put($cacheKeySos, $novoEstado, 86400);
+                // Atualiza o cache (válido por 1 hora para evitar flood, mas permite correções)
+                Cache::put($cacheKeySos, $novoEstado, 3600);
             }
         }
 
-        // Caso especial: Marcamos como pânico se detectado, 
-        // mas não resetamos automaticamente apenas porque o pacote atual não o contém.
-        // O reset deve vir de um evento específico ou comando.
+        // Sincronização de estado concluída (incluindo Reset Automático via flag 'em_panico')
     }
 }

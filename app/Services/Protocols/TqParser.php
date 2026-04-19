@@ -112,10 +112,8 @@ class TqParser implements ProtocolParserInterface
             'raw_data'          => $hex,
         ];
 
-        // Só enviamos em_panico se for verdadeiro para manter a persistência (regra manual de reset)
-        if ($panico) {
-            $res['em_panico'] = true;
-        }
+        // Definimos em_panico explicitamente para suportar o reset automático solicitado pelo usuário
+        $res['em_panico'] = $panico;
 
         return $res;
     }
@@ -202,9 +200,8 @@ class TqParser implements ProtocolParserInterface
             'raw_data'          => $linha,
         ];
 
-        if ($evento) {
-            $res['em_panico'] = true;
-        }
+        // Definimos em_panico explicitamente para suportar o reset automático solicitado pelo usuário
+        $res['em_panico'] = (!!$evento);
 
         return $res;
     }
