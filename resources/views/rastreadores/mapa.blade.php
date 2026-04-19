@@ -130,7 +130,6 @@ function adicionarMarcadores(dados) {
         const content = `
             <div class="popup-title"><i class="fas fa-truck"></i> ${r.nome}</div>
             <div class="popup-row">IMEI: <span>${r.imei}</span></div>
-            <div class="popup-row">Ignição: <span class="badge-status ${r.ignicao ? 'badge-on':'badge-off'}">${r.ignicao ? 'Ligada':'Desligada'}</span></div>
             <div class="popup-row">Botão SOS: <span class="badge-status ${r.em_panico ? 'badge-panic':'badge-off'}">${r.em_panico ? 'ATIVADO':'DESATIVADO'}</span></div>
             <div class="popup-row">Velocidade: <span>${r.velocidade} km/h</span></div>
             <div class="popup-row">Carga: <span>${r.data_hora}</span></div>
