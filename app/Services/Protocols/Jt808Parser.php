@@ -51,11 +51,13 @@ class Jt808Parser implements ProtocolParserInterface
         // Extrai Alarme e Status para o log
         $alarmBin = (strlen($body) >= 4) ? unpack('N', substr($body, 0, 4))[1] : 0;
         $statusBin = (strlen($body) >= 8) ? unpack('N', substr($body, 4, 4))[1] : 0;
+        $sosAtivo = ($alarmBin & 0x01);
 
         Log::info("[Jt808Parser] Mensagem recebida", [
             'id' => dechex($msgId),
             'imei' => $terminalId,
             'id_orig' => $terminalIdRaw,
+            'sos' => $sosAtivo ? 'ATIVADO' : 'NORMAL',
             'alarm_hex' => dechex($alarmBin),
             'status_hex' => dechex($statusBin),
             'seq' => $seq,
@@ -178,7 +180,7 @@ class Jt808Parser implements ProtocolParserInterface
         // ACC bit no Status field (Bit 0 em JT808)
         $ignicao = ($status & 0x01) ? '0001' : '0002';
 
-        return [
+        $res = [
             'tipo'              => $evento ? 'alerta' : 'localizacao',
             'evento_tipo'       => $evento,
             'evento_descricao'  => $descricao,
@@ -193,6 +195,13 @@ class Jt808Parser implements ProtocolParserInterface
             'raw_data'          => bin2hex($raw),
             'response'          => $this->buildAck(0x0200, $terminalIdRaw, $seq)
         ];
+
+        // Só enviamos em_panico se for verdadeiro para manter a persistência
+        if ($evento === 'SOS') {
+            $res['em_panico'] = true;
+        }
+
+        return $res;
     }
 
     private function unescape(string $raw): string
