@@ -42,9 +42,8 @@
     <button class="btn btn-primary btn-sm" onclick="atualizarMapa()">
         <i class="fas fa-rotate"></i> Atualizar
     </button>
-    <span style="font-size:.78rem;color:var(--muted);margin-left:auto">
-        <i class="fas fa-circle" style="color:var(--success);font-size:.6rem"></i>
-        {{ $ultimasPosicoes->count() }} rastreador(es) com posição
+    <span id="syncText" style="font-size:.78rem;color:var(--muted);margin-left:auto">
+        <i class="fas fa-sync" style="font-size:.7rem"></i> Sincronizando...
     </span>
 </div>
 
@@ -53,144 +52,116 @@
 
 @push('scripts')
 <script>
-// Dados das últimas posições (passados pelo controller)
-const posicoes = @json($ultimasPosicoes);
+let posicoes = @json($ultimasPosicoes);
+const marcadores = {};
+const camadaMarcadores = L.layerGroup();
+let primeiraCarga = true;
 
-// Inicializa mapa centrado no Brasil
+// Inicializa mapa 
 const map = L.map('map', {
     center: [-15.7801, -47.9292],
     zoom: 5,
     zoomControl: true,
 });
 
-// Tile layer OpenStreetMap
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
+    attribution: '© OpenStreetMap',
     maxZoom: 19,
 }).addTo(map);
 
-// Função para criar ícone baseado no status
-function criarIcone(r) {
-    let cor1 = "#0ea5e9";
-    let cor2 = "#0284c7";
-    let pulse = "";
+camadaMarcadores.addTo(map);
 
+function transformarDadosApi(dados) {
+    return dados.map(r => {
+        const u = r.ultima_posicao;
+        if (!u) return null;
+        return {
+            id: r.id, imei: r.imei, nome: r.nome, placa: r.placa,
+            ignicao: !!r.ignicao, em_panico: !!r.em_panico,
+            lat: parseFloat(u.latitude), lon: parseFloat(u.longitude),
+            velocidade: parseInt(u.velocidade),
+            data_hora: new Date(u.data_hora).toLocaleString('pt-BR')
+        };
+    }).filter(f => f);
+}
+
+function criarIcone(r) {
+    let cor1 = "#0ea5e9", cor2 = "#0284c7", pulse = "";
     if (r.em_panico) {
-        cor1 = "#ef4444";
-        cor2 = "#b91c1c";
+        cor1 = "#ef4444"; cor2 = "#b91c1c";
         pulse = "animation: pulse-red 1.5s infinite;";
     } else if (!r.ignicao) {
-        cor1 = "#94a3b8";
-        cor2 = "#475569";
+        cor1 = "#94a3b8"; cor2 = "#475569";
     }
-
     return L.divIcon({
-        html: `<div style="
-            width:32px; height:32px;
-            background:linear-gradient(135deg,${cor1},${cor2});
-            border:3px solid #fff;
-            border-radius:50%;
-            display:flex; align-items:center; justify-content:center;
-            box-shadow:0 2px 8px rgba(0,0,0,.5);
-            font-size:13px; color:#fff;
-            ${pulse}
-        "><i class="fas fa-truck"></i></div>`,
-        className: '',
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
-        popupAnchor: [0, -18],
+        html: `<div style="width:32px; height:32px; background:linear-gradient(135deg,${cor1},${cor2}); border:3px solid #fff; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.5); font-size:13px; color:#fff; ${pulse}"><i class="fas fa-truck"></i></div>`,
+        className: '', iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -18],
     });
 }
-
-const marcadores    = {};
-const camadaMarcadores = L.layerGroup().addTo(map);
 
 function adicionarMarcadores(dados) {
-    camadaMarcadores.clearLayers();
-
     dados.forEach(r => {
-        if (!r.lat || !r.lon) return;
+        const content = `
+            <div class="popup-title"><i class="fas fa-truck"></i> ${r.nome}</div>
+            <div class="popup-row">IMEI: <span>${r.imei}</span></div>
+            <div class="popup-row">Ignição: <span class="badge-status ${r.ignicao ? 'badge-on':'badge-off'}">${r.ignicao ? 'Ligada':'Desligada'}</span></div>
+            <div class="popup-row">Botão SOS: <span class="badge-status ${r.em_panico ? 'badge-panic':'badge-off'}">${r.em_panico ? 'ATIVADO':'DESATIVADO'}</span></div>
+            <div class="popup-row">Velocidade: <span>${r.velocidade} km/h</span></div>
+            <div class="popup-row">Carga: <span>${r.data_hora}</span></div>
+        `;
 
-        const ignicaoBadge = r.ignicao 
-            ? '<span class="badge-status badge-on">Ligada</span>' 
-            : '<span class="badge-status badge-off">Desligada</span>';
-        
-        const sosBadge = r.em_panico 
-            ? '<span class="badge-status badge-panic">Ativado</span>' 
-            : '<span class="badge-status badge-off">Desativado</span>';
-
-        const marker = L.marker([r.lat, r.lon], { icon: criarIcone(r) })
-            .bindPopup(`
-                <div class="popup-title">
-                    <i class="fas fa-truck"></i> ${r.nome}
-                </div>
-                <div class="popup-row">IMEI: <span>${r.imei}</span></div>
-                ${r.placa ? `<div class="popup-row">Placa: <span>${r.placa}</span></div>` : ''}
-                <div class="popup-row">Ignição: <span>${ignicaoBadge}</span></div>
-                <div class="popup-row">Botão SOS: <span>${sosBadge}</span></div>
-                <div class="popup-row">Velocidade: <span>${r.velocidade ?? 0} km/h</span></div>
-                <div class="popup-row">Últ. contato: <span>${r.data_hora ?? '—'}</span></div>
-                <div style="margin-top:.6rem">
-                    <a href="/rastreadores/${r.id}/historico" style="font-size:.78rem;color:#0ea5e9;text-decoration:none">
-                        <i class="fas fa-clock-rotate-left"></i> Ver histórico
-                    </a>
-                </div>
-            `);
-
-        marcadores[r.id] = marker;
-        camadaMarcadores.addLayer(marker);
+        if (marcadores[r.id]) {
+            marcadores[r.id].setLatLng([r.lat, r.lon]);
+            marcadores[r.id].setIcon(criarIcone(r));
+            marcadores[r.id].setPopupContent(content);
+        } else {
+            const m = L.marker([r.lat, r.lon], { icon: criarIcone(r) }).bindPopup(content);
+            marcadores[r.id] = m;
+            camadaMarcadores.addLayer(m);
+        }
     });
 
-    // Ajusta zoom para exibir todos os marcadores
-    if (Object.keys(marcadores).length > 0) {
-        const grupo = L.featureGroup(Object.values(marcadores));
-        // Se houver apenas 1, centraliza no 1. Se mais, fitBounds.
-        if (Object.keys(marcadores).length === 1) {
-            const m = Object.values(marcadores)[0];
-            map.setView(m.getLatLng(), 15);
-        } else {
-            map.fitBounds(grupo.getBounds().pad(.2));
-            if (map.getZoom() > 16) map.setZoom(16); // Evita zoom excessivo
-        }
-    }
-}
-
-// Filtra marcadores por rastreador selecionado
-document.getElementById('filtroRastreador').addEventListener('change', function () {
-    const id = this.value;
-    if (!id) {
-        adicionarMarcadores(posicoes);
-    } else {
-        const filtrado = posicoes.filter(r => r.id == id);
-        adicionarMarcadores(filtrado);
-        if (filtrado.length && marcadores[filtrado[0].id]) {
-            map.setView([filtrado[0].lat, filtrado[0].lon], 15);
-            marcadores[filtrado[0].id].openPopup();
-        }
-    }
-});
-
-function centrarMapa() {
-    if (Object.keys(marcadores).length > 0) {
-        const grupo = L.featureGroup(Object.values(marcadores));
-        map.fitBounds(grupo.getBounds().pad(.2));
-    } else {
-        map.setView([-15.78, -47.93], 5);
+    if (primeiraCarga && Object.keys(marcadores).length > 0) {
+        primeiraCarga = false;
+        centrarMapa();
     }
 }
 
 async function atualizarMapa() {
+    const sync = document.getElementById('syncText');
+    if(sync) sync.style.opacity = '1';
+    
     try {
-        const res  = await fetch('/api/v1/rastreadores');
-        const data = await res.json();
-        // Recarrega página para buscar últimas posições atualizadas
-        window.location.reload();
+        const res = await fetch('/api/v1/rastreadores');
+        const rData = await res.json();
+        posicoes = transformarDadosApi(rData);
+        adicionarMarcadores(posicoes);
+        if(sync) sync.innerHTML = `<i class="fas fa-check" style="color:var(--success)"></i> Atualizado: ${new Date().toLocaleTimeString('pt-BR')}`;
     } catch (e) {
-        console.error('Erro ao atualizar:', e);
+        console.error(e);
+        if(sync) sync.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Erro ao sincronizar';
     }
 }
 
-// Renderiza na carga inicial
+function centrarMapa() {
+    const values = Object.values(marcadores);
+    if (!values.length) return;
+    const group = L.featureGroup(values);
+    map.fitBounds(group.getBounds().pad(.2));
+    if (map.getZoom() > 16) map.setZoom(16);
+}
+
+// Filtro
+document.getElementById('filtroRastreador').addEventListener('change', function() {
+    const id = this.value;
+    if (!id) return centrarMapa();
+    const m = marcadores[id];
+    if (m) { map.setView(m.getLatLng(), 16); m.openPopup(); }
+});
+
+// Loop
 adicionarMarcadores(posicoes);
+setInterval(atualizarMapa, 15000);
+setTimeout(atualizarMapa, 1000); // Força carga da API para data real
 </script>
 @endpush

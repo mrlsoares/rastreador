@@ -11,7 +11,10 @@ class RastreadorApiController extends Controller
     public function index()
     {
         return response()->json(
-            Rastreador::ativos()->orderBy('nome')->get()
+            Rastreador::ativos()
+                ->with(['ultimaPosicao' => fn($q) => $q->where('data_hora', '<=', now())])
+                ->orderBy('nome')
+                ->get()
         );
     }
 
