@@ -65,13 +65,15 @@ let primeiraCarga = true;
 window.Pusher = Pusher;
 window.Echo = new Echo({
     broadcaster: 'reverb',
-    key: '{{ env('REVERB_APP_KEY') }}',
-    wsHost: '{{ env('REVERB_HOST', 'localhost') }}',
-    wsPort: {{ env('REVERB_PORT', 8080) }},
-    wssPort: {{ env('REVERB_PORT', 8080) }},
-    forceTLS: false,
+    key: '{{ config('reverb.apps.0.key') }}',
+    wsHost: '{{ config('reverb.apps.0.options.host') }}',
+    wsPort: {{ config('reverb.apps.0.options.port') }},
+    wssPort: {{ config('reverb.apps.0.options.port') }},
+    forceTLS: {{ config('reverb.apps.0.options.scheme') === 'https' ? 'true' : 'false' }},
     enabledTransports: ['ws', 'wss'],
 });
+
+console.log('Echo Inicializado:', '{{ config('reverb.apps.0.options.host') }}');
 
 // Inicializa mapa 
 const map = L.map('map', {
