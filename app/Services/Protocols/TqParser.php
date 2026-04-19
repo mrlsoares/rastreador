@@ -80,14 +80,18 @@ class TqParser implements ProtocolParserInterface
         $alertaBin = ord(substr($raw, 32, 1));
         $evento = null;
         $descricao = null;
+        $panico = false;
+
         if ($alertaBin === 0x01 || $alertaBin === 0x02) {
             $evento = 'SOS';
-            $descricao = 'Botão de pânico acionado';
+            $descricao = 'Botão de pânico acionado (Binário)';
+            $panico = true;
         }
 
         Log::info("[TqParser] Packet Binary", [
             'imei'   => $imei,
             'alerta' => $alertaBin,
+            'sos'    => $panico ? 'ATIVADO' : 'NORMAL',
             'raw'    => $hex
         ]);
 
@@ -95,7 +99,7 @@ class TqParser implements ProtocolParserInterface
         if ($latitude > 0) $latitude = -$latitude;
         if ($longitude > 0) $longitude = -$longitude;
 
-        return [
+        $res = [
             'tipo'              => $evento ? 'alerta' : 'localizacao',
             'evento_tipo'       => $evento,
             'evento_descricao'  => $descricao,
@@ -107,6 +111,13 @@ class TqParser implements ProtocolParserInterface
             'sinal_gps'         => 5,
             'raw_data'          => $hex,
         ];
+
+        // Só enviamos em_panico se for verdadeiro para manter a persistência (regra manual de reset)
+        if ($panico) {
+            $res['em_panico'] = true;
+        }
+
+        return $res;
     }
 
     private function parseBcdCoordinate(string $bcd, int $digitosGraus): ?float
@@ -157,26 +168,20 @@ class TqParser implements ProtocolParserInterface
         Log::info("[TqParser] Packet H02 ASCII", [
             'tipo'   => $tipoPacket,
             'status' => $status,
-            'imei'   => $imei
+            'imei'   => $imei,
+            'sos'    => $evento ? 'ATIVADO' : 'NORMAL'
         ]);
 
         if ($valid !== 'A' && $valid !== 'V') return null;
 
-        $evento = null;
-        $descricao = null;
-        if ($tipoPacket === 'V1' || $tipoPacket === 'V2' || $tipoPacket === 'EX') {
-            $evento = 'SOS';
-            $descricao = 'Alerta de pânico comunicado por pacote ASCII';
-        }
-
         try {
             $dataHora = Carbon::createFromFormat('dmyHis', $data . $hora, 'UTC')
-                              ->setTimezone('America/Sao_Paulo');
+                               ->setTimezone('America/Sao_Paulo');
         } catch (\Exception $e) {
             $dataHora = now()->setTimezone('America/Sao_Paulo');
         }
 
-        return [
+        $res = [
             'tipo'              => $evento ? 'alerta' : 'localizacao',
             'evento_tipo'       => $evento,
             'evento_descricao'  => $descricao,
@@ -189,6 +194,12 @@ class TqParser implements ProtocolParserInterface
             'sinal_gps'         => ($valid === 'A') ? 5 : 0,
             'raw_data'          => $linha,
         ];
+
+        if ($evento) {
+            $res['em_panico'] = true;
+        }
+
+        return $res;
     }
 
     private function convertNmeaToDecimal(string $nmea, string $direcao): ?float
