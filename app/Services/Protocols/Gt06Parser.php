@@ -123,12 +123,6 @@ class Gt06Parser implements ProtocolParserInterface
             $data['em_panico']   = true;
             $data['evento_descricao'] = 'Botão de pânico acionado';
         }
-        else
-        {
-           $data['evento_tipo'] = 'SOS';
-           $data['em_panico']   = false;
-           $data['evento_descricao'] = 'Botão de pânico não acionado';   
-        }
         Log::info("[Gt06Parser] Pacote de Localização recebido", [
             'data_hora' => $dataHora,
             'latitude' => $latitude,

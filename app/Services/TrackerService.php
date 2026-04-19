@@ -18,6 +18,11 @@ use Illuminate\Support\Facades\Log;
 class TrackerService
 {
     /**
+     * Cache em memória (Process-level) como fallback de ultra-velocidade.
+     */
+    protected static array $imeiMap = [];
+
+    /**
      * Processa os dados parseados e persiste no banco de dados.
      */
     public function handle(ProtocolParserInterface $parser, array $dados, string $ip): void
@@ -29,13 +34,20 @@ class TrackerService
 
         // Cache de IMEI para protocolos que não enviam em todos os frames (ex: GT06)
         if (isset($dados['tipo']) && $dados['tipo'] === 'login' && isset($dados['imei'])) {
+            self::$imeiMap[$ip] = $dados['imei'];
             Cache::put("tracker_imei_{$ip}", $dados['imei'], 86400); // 24 horas
+            Log::info("[TrackerService] IMEI vinculado ao IP via Login", ['ip' => $ip, 'imei' => $dados['imei']]);
             return;
         }
 
-        // Tenta recuperar IMEI do cache se não estiver presente no pacote atual
+        // Tenta recuperar IMEI (1. Memória local, 2. Cache central)
         if (!isset($dados['imei'])) {
-            $dados['imei'] = Cache::get("tracker_imei_{$ip}");
+            $dados['imei'] = self::$imeiMap[$ip] ?? Cache::get("tracker_imei_{$ip}");
+            
+            // Se achou no cache central mas não na memória, sincroniza a memória
+            if ($dados['imei'] && !isset(self::$imeiMap[$ip])) {
+                self::$imeiMap[$ip] = $dados['imei'];
+            }
         }
 
         if (!$dados['imei']) {
