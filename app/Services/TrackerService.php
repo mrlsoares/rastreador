@@ -158,14 +158,24 @@ class TrackerService
         // Sincroniza estado de pânico se o parser enviar a flag (ex: pacotes de status ou alarme fim)
         if (isset($dados['em_panico'])) {
             $novoEstado = (bool)$dados['em_panico'];
-            if ($rastreador->em_panico !== $novoEstado) {
+            
+            $cacheKeySos = "tracker_status_sos_{$rastreador->imei}";
+            $ultimoEstadoCache = Cache::get($cacheKeySos);
+
+            // Só processa se o estado em cache for diferente do novo (ou se não houver cache)
+            if ($ultimoEstadoCache !== $novoEstado) {
                 Log::info("[TrackerService] Mudança de estado SOS", [
                     'imei' => $rastreador->imei,
                     'anterior' => $rastreador->em_panico,
                     'novo' => $novoEstado,
                     'origem' => $dados['evento_tipo'] ?? 'STATUS'
                 ]);
+
+                // Atualiza o banco
                 $rastreador->update(['em_panico' => $novoEstado]);
+
+                // Atualiza o cache (válido por 24h)
+                Cache::put($cacheKeySos, $novoEstado, 86400);
             }
         }
 
