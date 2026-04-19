@@ -165,6 +165,13 @@ class TqParser implements ProtocolParserInterface
         $data = $partes[11];
         $status = $partes[12] ?? 'N/A';
 
+        $evento = null;
+        $descricao = null;
+        if ($tipoPacket === 'V1' || $tipoPacket === 'V2' || $tipoPacket === 'EX') {
+            $evento = 'SOS';
+            $descricao = 'Alerta de pânico comunicado por pacote ASCII';
+        }
+
         Log::info("[TqParser] Packet H02 ASCII", [
             'tipo'   => $tipoPacket,
             'status' => $status,
