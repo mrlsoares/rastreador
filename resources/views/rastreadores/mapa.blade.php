@@ -9,20 +9,15 @@
         display: flex; gap: .75rem; flex-wrap: wrap;
         margin-bottom: 1rem; align-items: center;
     }
-    .leaflet-popup-content { font-family: 'Inter', sans-serif; min-width: 180px; }
-    .popup-title { font-weight: 700; font-size: .9rem; color: #0ea5e9; margin-bottom: .4rem; }
-    .popup-row   { font-size: .8rem; color: #94a3b8; margin: .2rem 0; }
-    .popup-row span { color: #e2e8f0; font-weight: 500; }
-    .badge-status {
-        padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
-    }
-    .badge-on { background: #059669; color: #fff; }
-    .badge-off { background: #4b5563; color: #fff; }
-    .badge-panic { background: #dc2626; color: #fff; animation: pulse-red 2s infinite; }
-    @@keyframes pulse-red {
-        0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
-        70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+    .map-controls select { flex: 1; min-width: 200px; }
+    
+    @media (max-width: 768px) {
+        #map { height: calc(100vh - 120px); border-radius: 0; margin: 0 -1rem; border-left: none; border-right: none; }
+        .page-header { display: none; }
+        .map-controls { gap: .5rem; }
+        .map-controls select { width: 100%; order: 1; }
+        .map-controls .btn { flex: 1; order: 2; font-size: .75rem; padding: .5rem; }
+        .map-controls span { width: 100%; order: 3; text-align: center; margin-top: .25rem; }
     }
 </style>
 @endpush

@@ -29,7 +29,7 @@ class TrackerService
 
         // Cache de IMEI para protocolos que não enviam em todos os frames (ex: GT06)
         if (isset($dados['tipo']) && $dados['tipo'] === 'login' && isset($dados['imei'])) {
-            Cache::put("tracker_imei_{$ip}", $dados['imei'], 3600);
+            Cache::put("tracker_imei_{$ip}", $dados['imei'], 86400); // 24 horas
             return;
         }
 

@@ -41,6 +41,14 @@
         /* ── Sidebar ── */
         .layout { display: flex; min-height: 100vh; }
 
+        /* ── Sidebar ── */
+        .layout { display: flex; min-height: 100vh; overflow-x: hidden; }
+        
+        .sidebar-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40;
+            display: none; transition: opacity .3s;
+        }
+
         .sidebar {
             width: 240px;
             background: var(--surface);
@@ -51,6 +59,8 @@
             gap: .5rem;
             position: fixed;
             top: 0; left: 0; bottom: 0;
+            z-index: 50;
+            transition: transform .3s ease;
         }
 
         .sidebar-logo {
@@ -94,12 +104,41 @@
         .nav-item.active { color: var(--primary); }
         .nav-item i { width: 16px; text-align: center; }
 
+        /* ── Mobile Header ── */
+        .mobile-header {
+            display: none;
+            background: var(--surface);
+            padding: .75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+            justify-content: space-between;
+            position: sticky; top: 0; z-index: 30;
+        }
+
+        .btn-menu {
+            background: none; border: none; color: var(--text);
+            font-size: 1.25rem; cursor: pointer;
+            width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 8px;
+        }
+        .btn-menu:hover { background: var(--surface2); }
+
         /* ── Main ── */
         .main {
             margin-left: 240px;
             flex: 1;
             padding: 2rem;
             min-height: 100vh;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .sidebar-overlay.visible { display: block; }
+            .main { margin-left: 0; padding: 1rem; }
+            .mobile-header { display: flex; }
         }
 
         .page-header {
@@ -273,8 +312,10 @@
 </head>
 <body>
 <div class="layout">
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside id="sidebar" class="sidebar">
         <div class="sidebar-logo">
             <div class="icon"><i class="fas fa-satellite-dish"></i></div>
             <div>
@@ -296,12 +337,31 @@
 
     <!-- Main Content -->
     <main class="main">
+        <header class="mobile-header">
+            <div style="display:flex;align-items:center;gap:.75rem">
+                <button class="btn-menu" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div style="font-weight:700;font-size:.9rem">Rastreador</div>
+            </div>
+            <div class="icon" style="color:var(--primary);font-size:1.1rem">
+                <i class="fas fa-satellite-dish"></i>
+            </div>
+        </header>
+
         @yield('content')
     </main>
 </div>
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('sidebarOverlay').classList.toggle('visible');
+    }
+</script>
 
 @stack('scripts')
 </body>

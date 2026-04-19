@@ -8,21 +8,23 @@
     <p>Todos os dispositivos TRX-16 cadastrados</p>
 </div>
 
-<div class="table-wrap">
-    <div class="table-header">
-        <h2>Dispositivos ({{ $rastreadores->total() }})</h2>
-    </div>
+    <style>
+        @media (max-width: 768px) {
+            .hide-mobile { display: none; }
+            .table-wrap { border-radius: 0; margin: 0 -1rem; }
+        }
+    </style>
 
     <table>
         <thead>
         <tr>
             <th>Status</th>
             <th>Nome</th>
-            <th>Placa</th>
-            <th>IMEI</th>
-            <th>Modelo</th>
+            <th class="hide-mobile">Placa</th>
+            <th class="hide-mobile">IMEI</th>
+            <th class="hide-mobile">Modelo</th>
             <th>Último Contato</th>
-            <th>Posições</th>
+            <th class="hide-mobile">Posições</th>
             <th>Ações</th>
         </tr>
         </thead>
@@ -35,13 +37,13 @@
                     <span style="font-size:.75rem;color:var(--muted);margin-left:.4rem">{{ $online ? 'Online' : 'Offline' }}</span>
                 </td>
                 <td style="font-weight:600">{{ $r->nome }}</td>
-                <td><span class="badge {{ $r->placa ? 'blue' : '' }}" style="{{ !$r->placa ? 'color:var(--muted)' : '' }}">{{ $r->placa ?: '—' }}</span></td>
-                <td style="font-family:monospace;font-size:.78rem;color:var(--muted)">{{ $r->imei }}</td>
-                <td style="color:var(--muted);font-size:.82rem">{{ $r->modelo_veiculo ?: '—' }}</td>
+                <td class="hide-mobile"><span class="badge {{ $r->placa ? 'blue' : '' }}" style="{{ !$r->placa ? 'color:var(--muted)' : '' }}">{{ $r->placa ?: '—' }}</span></td>
+                <td class="hide-mobile" style="font-family:monospace;font-size:.78rem;color:var(--muted)">{{ $r->imei }}</td>
+                <td class="hide-mobile" style="color:var(--muted);font-size:.82rem">{{ $r->modelo_veiculo ?: '—' }}</td>
                 <td style="color:var(--muted);font-size:.82rem;white-space:nowrap">
                     {{ $r->ultimo_contato ? $r->ultimo_contato->format('d/m/Y H:i') : '—' }}
                 </td>
-                <td><span class="badge blue">{{ number_format($r->posicoes_count) }}</span></td>
+                <td class="hide-mobile"><span class="badge blue">{{ number_format($r->posicoes_count) }}</span></td>
                 <td style="white-space:nowrap">
                     <a href="{{ route('rastreadores.historico', $r) }}" class="btn btn-ghost btn-sm">
                         <i class="fas fa-clock-rotate-left"></i> Histórico
