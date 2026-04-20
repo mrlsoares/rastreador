@@ -180,7 +180,7 @@
         let marker = markers[r.imei];
         const icon = L.divIcon({
             className: 'custom-div-icon',
-            html: `<div style="background-color: ${panico ? '#ef4444' : '#3b82f6'};" class="marker-pin ${panico ? 'panic-pulse' : ''}"></div><i class="fas fa-truck" style="color: white;"></i>`,
+            html: `<div style="background-color: ${panico ? '#ef4444' : '#22c55e'};" class="marker-pin ${panico ? 'panic-pulse' : ''}"></div><i class="fas fa-truck" style="color: white;"></i>`,
             iconSize: [40, 40],
             iconAnchor: [20, 40]
         });
