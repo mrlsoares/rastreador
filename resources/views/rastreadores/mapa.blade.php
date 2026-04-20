@@ -145,6 +145,21 @@
         console.warn('[WebSocket] Falha na inicialização.', e);
     }
 
+    // Helper para formatar data (Brasileiro)
+    window.formatarData = function(dataStr) {
+        if (!dataStr || dataStr === '-') return '-';
+        try {
+            const date = new Date(dataStr);
+            if (isNaN(date.getTime())) return dataStr;
+            const d = date.getDate().toString().padStart(2, '0');
+            const m = (date.getMonth() + 1).toString().padStart(2, '0');
+            const a = date.getFullYear();
+            const h = date.getHours().toString().padStart(2, '0');
+            const i = date.getMinutes().toString().padStart(2, '0');
+            return `${d}/${m}/${a} ${h}:${i}`;
+        } catch (e) { return dataStr; }
+    };
+
     // Função Universal para Atualizar um Rastreador no Mapa
     window.atualizarRastreadorNoMapa = function(r) {
         if (!r) return;
@@ -175,7 +190,7 @@
             <div class="popup-row">IMEI: <span>${r.imei}</span></div>
             <div class="popup-row">Botão SOS: <span class="badge-status ${panico ? 'badge-panic':'badge-off'}">${panico ? 'ATIVADO':'DESATIVADO'}</span></div>
             <div class="popup-row">Velocidade: <span>${vel} km/h</span></div>
-            <div class="popup-row">Carga: <span>${data}</span></div>
+            <div class="popup-row">Carga: <span>${formatarData(data)}</span></div>
         `;
 
         const labelContent = `
@@ -184,8 +199,7 @@
                 <span style="font-size:10px; color:#cbd5e1">${r.imei}</span>
                 <div style="margin-top:4px; text-align:left; border-top:1px solid rgba(255,255,255,0.1); padding-top:2px;">
                     <div style="font-size:10px;">SOS: <span style="color:${panico ? '#ef4444' : '#22c55e'}; font-weight:bold">${panico ? 'LIGADO' : 'Desligado'}</span></div>
-                    <div style="font-size:9px; color:#94a3b8;">Contato: ${r.ultimo_contato || '-'}</div>
-                    <div style="font-size:9px; color:#94a3b8;">Posição: ${data}</div>
+                    <div style="font-size:9px; color:#94a3b8;">Contato: ${formatarData(r.ultimo_contato)}</div>
                 </div>
             </div>
         `;
