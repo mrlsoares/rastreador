@@ -195,12 +195,19 @@
         }
     };
 
-    // Função para Centralizar
+    // Função para Centralizar todas as unidades no mapa (Zoom Inteligente)
     window.centrarMapa = function() {
         const values = Object.values(markers);
         if (values.length > 0) {
             const group = new L.featureGroup(values);
-            map.fitBounds(group.getBounds().pad(0.1));
+            map.fitBounds(group.getBounds().pad(0.15));
+            
+            // Se houver apenas 1 veículo, dá um zoom mais próximo (nível rua)
+            if (values.length === 1) {
+                map.setZoom(16);
+            } else if (map.getZoom() > 17) {
+                map.setZoom(17);
+            }
         }
     };
 
@@ -209,17 +216,30 @@
         try {
             const response = await fetch('/api/v1/rastreadores?_t=' + Date.now());
             const data = await response.json();
+            
             if (data && Array.isArray(data)) {
                 data.forEach(r => { if (r) atualizarRastreadorNoMapa(r); });
             }
+
+            // Auto-ajuste na primeira carga
             if (data && data.length > 0 && primeiraCarga) {
                 centrarMapa();
                 primeiraCarga = false;
             }
+
+            // Atualização visual do status (Checagem Segura)
             const syncStatus = document.getElementById('sync-status');
-            if (syncStatus && (!window.Echo || window.Echo.connector.pusher.connection.state !== 'connected')) {
-                syncStatus.style.opacity = '0.5';
-                setTimeout(() => syncStatus.style.opacity = '1', 200);
+            if (syncStatus) {
+                const isConnected = window.Echo && 
+                                   window.Echo.connector && 
+                                   window.Echo.connector.pusher &&
+                                   window.Echo.connector.pusher.connection &&
+                                   window.Echo.connector.pusher.connection.state === 'connected';
+
+                if (!isConnected) {
+                    syncStatus.style.opacity = '0.5';
+                    setTimeout(() => syncStatus.style.opacity = '1', 200);
+                }
             }
         } catch (e) {
             console.error('[Polling] Falha ao sincronizar:', e);
