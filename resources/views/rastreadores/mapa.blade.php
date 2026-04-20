@@ -181,8 +181,12 @@
         const labelContent = `
             <div class="marker-label">
                 <b>${r.nome || 'Rastreador'}</b>
-                ${r.imei}
-                ${panico ? '<br><span class="label-sos-alert">🆘 SOS ATIVO</span>' : ''}
+                <span style="font-size:10px; color:#cbd5e1">${r.imei}</span>
+                <div style="margin-top:4px; text-align:left; border-top:1px solid rgba(255,255,255,0.1); padding-top:2px;">
+                    <div style="font-size:10px;">SOS: <span style="color:${panico ? '#ef4444' : '#22c55e'}; font-weight:bold">${panico ? 'LIGADO' : 'Desligado'}</span></div>
+                    <div style="font-size:9px; color:#94a3b8;">Contato: ${r.ultimo_contato || '-'}</div>
+                    <div style="font-size:9px; color:#94a3b8;">Posição: ${data}</div>
+                </div>
             </div>
         `;
 
@@ -197,7 +201,7 @@
             marker.bindTooltip(labelContent, { 
                 permanent: true, 
                 direction: 'top', 
-                offset: [0, -32],
+                offset: [0, -35],
                 className: 'marker-label-container'
             }).openTooltip();
             markers[r.imei] = marker;
