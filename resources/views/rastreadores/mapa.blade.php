@@ -19,6 +19,43 @@
         .map-controls .btn { flex: 1; order: 2; font-size: .75rem; padding: .5rem; }
         .map-controls span { width: 100%; order: 3; text-align: center; margin-top: .25rem; }
     }
+
+    /* Estilos para Popups e Ícones */
+    .custom-div-icon { background: none; border: none; }
+    .marker-pin {
+        width: 38px; height: 38px; border-radius: 50% 50% 50% 0;
+        position: absolute; transform: rotate(-45deg);
+        left: 50%; top: 50%; margin: -19px 0 0 -19px;
+        border: 3px solid #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    .custom-div-icon i {
+        position: absolute; width: 38px; font-size: 16px;
+        left: 0; top: 8px; text-align: center; color: #fff;
+    }
+
+    .panic-pulse {
+        animation: pulse-red 1.5s infinite;
+        background-color: #ef4444; /* Default panic color */
+    }
+
+    @keyframes pulse-red {
+        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+        70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    .popup-title { font-weight: 700; color: #fff; border-bottom: 1px solid #444; padding-bottom: 5px; margin-bottom: 8px; font-size: 14px; }
+    .popup-row { font-size: 12px; margin-bottom: 3px; color: #ccc; }
+    .popup-row span { font-weight: 600; color: #fff; }
+    .badge-status { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .badge-on { background: #22c55e; color: #fff; } /* Green */
+    .badge-off { background: #64748b; color: #fff; } /* Slate */
+    .badge-panic { background: #ef4444; color: #fff; animation: blink 1s infinite; }
+    
+    @keyframes blink { 50% { opacity: 0.6; } }
+    
+    .leaflet-popup-content-wrapper { background: #1e293b; color: #fff; border-radius: 8px; padding: 5px; }
+    .leaflet-popup-tip { background: #1e293b; }
 </style>
 @endpush
 
@@ -39,10 +76,10 @@
     <button class="btn btn-ghost btn-sm" onclick="centrarMapa()">
         <i class="fas fa-crosshairs"></i> Centralizar
     </button>
-    <button class="btn btn-primary btn-sm" onclick="atualizarMapa()">
+    <button class="btn btn-primary btn-sm" onclick="sincronizar()">
         <i class="fas fa-rotate"></i> Atualizar
     </button>
-    <span id="syncText" style="font-size:.78rem;color:var(--muted);margin-left:auto">
+    <span id="sync-status" style="font-size:.78rem;color:var(--muted);margin-left:auto">
         <i class="fas fa-sync" style="font-size:.7rem"></i> Sincronizando...
     </span>
 </div>
@@ -56,10 +93,8 @@
 <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
 
 <script>
-let posicoes = @json($ultimasPosicoes);
-const marcadores = {};
-const camadaMarcadores = L.layerGroup();
 let primeiraCarga = true;
+const markers = {};
 
 // --- Configuração WebSocket (Reverb) ---
 try {
@@ -78,133 +113,116 @@ try {
         enabledTransports: ['ws', 'wss'],
     });
 
-    console.log('Echo Inicializado:', reverbHost, 'Key:', reverbKey);
+    console.log('[WebSocket] Echo Inicializado em:', reverbHost, 'Key:', reverbKey);
+
+    window.Echo.channel('rastreamento')
+        .listen('.sos.changed', (e) => {
+            const r = e.rastreador;
+            console.log(`[WebSocket] Sinal Recebido - Rastreador ${r.imei}: Panico=${r.em_panico}`);
+            atualizarRastreadorNoMapa(r);
+        });
+
+    window.Echo.connector.pusher.connection.bind('state_change', (states) => {
+        console.log('[WebSocket] Conexão:', states.current);
+        const color = states.current === 'connected' ? '#22c55e' : '#94a3b8';
+        const text = states.current === 'connected' ? 'Conectado (Real-time)' : 'Sincronizando (Polling)...';
+        $('#sync-status').html(`<i class="fas fa-circle" style="color:${color}; font-size: 8px;"></i> ${text}`);
+    });
+
 } catch (e) {
-    console.warn('Erro ao carregar WebSockets. Usando Polling.', e);
+    console.warn('[WebSocket] Falha na inicialização. Usando apenas Polling.', e);
 }
 
 // Inicializa mapa 
 const map = L.map('map', {
     center: [-15.7801, -47.9292],
     zoom: 5,
-    zoomControl: true,
+    zoomControl: false
 });
+L.control.zoom({ position: 'bottomright' }).addTo(map);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap',
-    maxZoom: 19,
+    attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
-camadaMarcadores.addTo(map);
+// Função Universal para Atualizar um Rastreador no Mapa
+function atualizarRastreadorNoMapa(r) {
+    // Normalização de dados (suporta dados do banco e do WS)
+    const lat = parseFloat(r.latitude || r.ultima_latitude || 0);
+    const lon = parseFloat(r.longitude || r.ultima_longitude || 0);
+    const panico = !!r.em_panico;
+    const ignicao = !!r.ignicao;
+    
+    if (lat === 0) return;
 
-function transformarItem(r) {
-    return {
-        id: r.id, imei: r.imei, nome: r.nome, placa: r.placa,
-        ignicao: !!r.ignicao, em_panico: !!r.em_panico,
-        lat: parseFloat(r.ultima_latitude || 0), 
-        lon: parseFloat(r.ultima_longitude || 0),
-        velocidade: parseInt(r.velocidade || 0),
-        data_hora: new Date().toLocaleString('pt-BR')
-    };
-}
+    let marker = markers[r.imei];
 
-function transformarDadosApi(dados) {
-    return dados.map(r => {
-        const u = r.ultima_posicao;
-        if (!u) return null;
-        const item = transformarItem(r);
-        item.lat = parseFloat(u.latitude);
-        item.lon = parseFloat(u.longitude);
-        item.velocidade = parseInt(u.velocidade);
-        item.data_hora = new Date(u.data_hora).toLocaleString('pt-BR');
-        return item;
-    }).filter(f => f);
-}
-
-function criarIcone(r) {
-    let cor1 = "#0ea5e9", cor2 = "#0284c7", pulse = "";
-    if (r.em_panico) {
-        cor1 = "#ef4444"; cor2 = "#b91c1c";
-        pulse = "animation: pulse-red 1.5s infinite;";
-    } else if (!r.ignicao) {
-        cor1 = "#94a3b8"; cor2 = "#475569";
-    }
-    return L.divIcon({
-        html: `<div style="width:32px; height:32px; background:linear-gradient(135deg,${cor1},${cor2}); border:3px solid #fff; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.5); font-size:13px; color:#fff; ${pulse}"><i class="fas fa-truck"></i></div>`,
-        className: '', iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -18],
+    const icon = L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div style="background-color: ${panico ? '#ef4444' : '#3b82f6'};" class="marker-pin ${panico ? 'panic-pulse' : ''}"></div><i class="fas fa-truck" style="color: white;"></i>`,
+        iconSize: [40, 40],
+        iconAnchor: [20, 40]
     });
+
+    const content = `
+        <div class="popup-title"><i class="fas fa-truck"></i> ${r.nome}</div>
+        <div class="popup-row">IMEI: <span>${r.imei}</span></div>
+        <div class="popup-row">Botão SOS: <span class="badge-status ${panico ? 'badge-panic':'badge-off'}">${panico ? 'ATIVADO':'DESATIVADO'}</span></div>
+        <div class="popup-row">Velocidade: <span>${r.velocidade || 0} km/h</span></div>
+        <div class="popup-row">Carga: <span>${r.data_hora || '-'}</span></div>
+    `;
+
+    if (marker) {
+        marker.setLatLng([lat, lon]);
+        marker.setIcon(icon);
+        marker.getPopup().setContent(content);
+    } else {
+        marker = L.marker([lat, lon], { icon: icon }).addTo(map);
+        marker.bindPopup(content);
+        markers[r.imei] = marker;
+    }
 }
 
-function adicionarMarcadores(dados) {
-    dados.forEach(r => {
-        const content = `
-            <div class="popup-title"><i class="fas fa-truck"></i> ${r.nome}</div>
-            <div class="popup-row">IMEI: <span>${r.imei}</span></div>
-            <div class="popup-row">Botão SOS: <span class="badge-status ${r.em_panico ? 'badge-panic':'badge-off'}">${r.em_panico ? 'ATIVADO':'DESATIVADO'}</span></div>
-            <div class="popup-row">Velocidade: <span>${r.velocidade} km/h</span></div>
-            <div class="popup-row">Carga: <span>${r.data_hora}</span></div>
-        `;
-
-        if (marcadores[r.id]) {
-            marcadores[r.id].setLatLng([r.lat, r.lon]);
-            marcadores[r.id].setIcon(criarIcone(r));
-            marcadores[r.id].setPopupContent(content);
-        } else {
-            const m = L.marker([r.lat, r.lon], { icon: criarIcone(r) }).bindPopup(content);
-            marcadores[r.id] = m;
-            camadaMarcadores.addLayer(m);
+// Sincronização AJAX (Polling como Backup)
+function sincronizar() {
+    $.get('/api/v1/rastreadores?_t=' + Date.now(), function(data) {
+        console.log('[Polling] Atualizando dados via API...');
+        data.forEach(r => atualizarRastreadorNoMapa(r));
+        
+        if (data.length > 0 && primeiraCarga) {
+            const group = new L.featureGroup(Object.values(markers));
+            map.fitBounds(group.getBounds().pad(0.1));
+            primeiraCarga = false;
+        }
+        
+        // Efeito visual de atualização
+        if (!window.Echo || window.Echo.connector.pusher.connection.state !== 'connected') {
+             $('#sync-status').fadeOut(100).fadeIn(100);
         }
     });
-
-    if (primeiraCarga && Object.keys(marcadores).length > 0) {
-        primeiraCarga = false;
-        centrarMapa();
-    }
 }
 
-async function atualizarMapa() {
-    const sync = document.getElementById('syncText');
-    if(sync) sync.style.opacity = '1';
-    
-    try {
-        const res = await fetch('/api/v1/rastreadores');
-        const rData = await res.json();
-        posicoes = transformarDadosApi(rData);
-        adicionarMarcadores(posicoes);
-        if(sync) sync.innerHTML = `<i class="fas fa-check" style="color:var(--success)"></i> Atualizado: ${new Date().toLocaleTimeString('pt-BR')}`;
-    } catch (e) {
-        console.error(e);
-        if(sync) sync.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Erro ao sincronizar';
-    }
-}
-
-function centrarMapa() {
-    const values = Object.values(marcadores);
-    if (!values.length) return;
-    const group = L.featureGroup(values);
-    map.fitBounds(group.getBounds().pad(.2));
-    if (map.getZoom() > 16) map.setZoom(16);
-}
-
-// Ouvir WebSockets (Tempo Real)
-window.Echo.channel('rastreamento')
-    .listen('.sos.changed', (e) => {
-        console.log('Update WebSocket recebido:', e);
-        const item = transformarItem(e.rastreador);
-        adicionarMarcadores([item]);
-    });
-
-// Filtro
+// Filtro de seleção
 document.getElementById('filtroRastreador').addEventListener('change', function() {
     const id = this.value;
-    if (!id) return centrarMapa();
-    const m = marcadores[id];
-    if (m) { map.setView(m.getLatLng(), 16); m.openPopup(); }
+    if (!id) {
+         const group = new L.featureGroup(Object.values(markers));
+         map.fitBounds(group.getBounds().pad(0.1));
+         return;
+    }
+    // Procura o marker pelo IMEI que está no select (ou ID se você preferir)
+    // Para simplificar, vamos no primeiro que der match se o ID for do banco
+    $.get('/api/v1/rastreadores', function(data) {
+        const found = data.find(it => it.id == id);
+        if (found) {
+            const m = markers[found.imei];
+            if (m) { map.setView(m.getLatLng(), 16); m.openPopup(); }
+        }
+    });
 });
 
-// Loop (Mantido como fallback caso o socket caia)
-adicionarMarcadores(posicoes);
-setInterval(atualizarMapa, 30000); // Aumentado para 30s pois o WebSocket é o principal
-setTimeout(atualizarMapa, 1000);
+// Inicialização
+sincronizar();
+setInterval(sincronizar, 20000); // Polling a cada 20s como garantia
 </script>
 @endpush
