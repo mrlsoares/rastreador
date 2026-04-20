@@ -115,7 +115,7 @@
         const reverbKey = "{{ config('reverb.apps.0.key') }}" || "p3tq8onmsh1iv6mlyq0z";
         const reverbHost = window.location.hostname;
         
-        window.Echo = new LaravelEcho({
+        window.Echo = new Echo({
             broadcaster: 'reverb',
             key: reverbKey,
             wsHost: reverbHost,
@@ -148,10 +148,19 @@
     // Função Universal para Atualizar um Rastreador no Mapa
     window.atualizarRastreadorNoMapa = function(r) {
         if (!r) return;
-        const lat = parseFloat(r.latitude || r.ultima_latitude || 0);
-        const lon = parseFloat(r.longitude || r.ultima_longitude || 0);
+        
+        // Suporte a dados do banco (nested) e do WS (root)
+        const pos = r.ultima_posicao || {};
+        const lat = parseFloat(r.latitude || r.ultima_latitude || pos.latitude || 0);
+        const lon = parseFloat(r.longitude || r.ultima_longitude || pos.longitude || 0);
         const panico = !!r.em_panico;
-        if (lat === 0 || isNaN(lat)) return;
+        const vel = r.velocidade || pos.velocidade || 0;
+        const data = r.data_hora || pos.data_hora || '-';
+        
+        if (lat === 0 || isNaN(lat)) {
+            console.warn('[UI] Rastreador sem coordenadas:', r.imei);
+            return;
+        }
 
         let marker = markers[r.imei];
         const icon = L.divIcon({
@@ -165,8 +174,8 @@
             <div class="popup-title"><i class="fas fa-truck"></i> ${r.nome || 'Rastreador'}</div>
             <div class="popup-row">IMEI: <span>${r.imei}</span></div>
             <div class="popup-row">Botão SOS: <span class="badge-status ${panico ? 'badge-panic':'badge-off'}">${panico ? 'ATIVADO':'DESATIVADO'}</span></div>
-            <div class="popup-row">Velocidade: <span>${r.velocidade || 0} km/h</span></div>
-            <div class="popup-row">Carga: <span>${r.data_hora || '-'}</span></div>
+            <div class="popup-row">Velocidade: <span>${vel} km/h</span></div>
+            <div class="popup-row">Carga: <span>${data}</span></div>
         `;
 
         const labelContent = `

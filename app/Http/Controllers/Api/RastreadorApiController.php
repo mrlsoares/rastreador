@@ -12,7 +12,7 @@ class RastreadorApiController extends Controller
     {
         return response()->json(
             Rastreador::ativos()
-                ->with(['ultimaPosicao' => fn($q) => $q->where('data_hora', '<=', now())])
+                ->with('ultimaPosicao')
                 ->orderBy('nome')
                 ->get()
         );
