@@ -63,24 +63,24 @@ let primeiraCarga = true;
 
 // --- Configuração WebSocket (Reverb) ---
 try {
-    const reverbHost = '{{ config('reverb.apps.0.options.host', '') }}';
-    const finalHost = (reverbHost && reverbHost !== 'localhost') ? reverbHost : window.location.hostname;
+    const reverbKey = '{{ config('reverb.apps.0.key') }}' || 'dtkuedmal9qpzrhoe1xa';
+    const reverbHost = '{{ config('reverb.apps.0.options.host') }}' || window.location.hostname;
     const isHttps = (window.location.protocol === 'https:');
     
     window.Pusher = Pusher;
     window.Echo = new Echo({
         broadcaster: 'reverb',
-        key: '{{ config('reverb.apps.0.key', '') }}',
-        wsHost: finalHost,
-        wsPort: isHttps ? 443 : {{ config('reverb.apps.0.options.port', 8080) }},
-        wssPort: isHttps ? 443 : {{ config('reverb.apps.0.options.port', 8080) }},
+        key: reverbKey,
+        wsHost: reverbHost,
+        wsPort: isHttps ? 443 : 8080,
+        wssPort: isHttps ? 443 : 8080,
         forceTLS: isHttps,
         enabledTransports: ['ws', 'wss'],
     });
 
-    console.log('Echo Inicializado em:', finalHost, 'Porta:', isHttps ? 443 : 8080);
+    console.log('Echo Inicializado:', reverbHost, 'Key:', reverbKey);
 } catch (e) {
-    console.warn('Falha ao inicializar WebSockets. O mapa usará apenas Polling.', e);
+    console.warn('Erro ao carregar WebSockets. Usando Polling.', e);
 }
 
 // Inicializa mapa 
