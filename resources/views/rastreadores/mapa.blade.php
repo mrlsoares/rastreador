@@ -65,19 +65,20 @@ let primeiraCarga = true;
 try {
     const reverbHost = '{{ config('reverb.apps.0.options.host', '') }}';
     const finalHost = (reverbHost && reverbHost !== 'localhost') ? reverbHost : window.location.hostname;
+    const isHttps = (window.location.protocol === 'https:');
     
     window.Pusher = Pusher;
     window.Echo = new Echo({
         broadcaster: 'reverb',
         key: '{{ config('reverb.apps.0.key', '') }}',
         wsHost: finalHost,
-        wsPort: {{ config('reverb.apps.0.options.port', 8080) }},
-        wssPort: {{ config('reverb.apps.0.options.port', 8080) }},
-        forceTLS: {{ (config('reverb.apps.0.options.scheme', 'https') === 'https') ? 'true' : 'false' }},
+        wsPort: isHttps ? 443 : {{ config('reverb.apps.0.options.port', 8080) }},
+        wssPort: isHttps ? 443 : {{ config('reverb.apps.0.options.port', 8080) }},
+        forceTLS: isHttps,
         enabledTransports: ['ws', 'wss'],
     });
 
-    console.log('Echo Inicializado em:', finalHost);
+    console.log('Echo Inicializado em:', finalHost, 'Porta:', isHttps ? 443 : 8080);
 } catch (e) {
     console.warn('Falha ao inicializar WebSockets. O mapa usará apenas Polling.', e);
 }
