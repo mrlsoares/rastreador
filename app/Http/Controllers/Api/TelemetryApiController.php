@@ -7,6 +7,7 @@ use App\Models\Rastreador;
 use App\Models\Posicao;
 use App\Models\Evento;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
 /**
  * @OA\Info(
@@ -22,38 +23,18 @@ use Illuminate\Http\Request;
  */
 class TelemetryApiController extends Controller
 {
-    /**
-     * @OA\Get(
-     *     path="/api/v1/telemetria/{imei}/historico",
-     *     summary="Retorna o histórico de posições dentro de um período",
-     *     tags={"Telemetria"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="imei",
-     *         in="path",
-     *         required=true,
-     *         description="IMEI do rastreador",
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Parameter(
-     *         name="data_inicio",
-     *         in="query",
-     *         required=true,
-     *         description="Data de início (Y-m-d H:i:s)",
-     *         @OA\Schema(type="string", format="date-time")
-     *     ),
-     *     @OA\Parameter(
-     *         name="data_fim",
-     *         in="query",
-     *         required=true,
-     *         description="Data final (Y-m-d H:i:s)",
-     *         @OA\Schema(type="string", format="date-time")
-     *     ),
-     *     @OA\Response(response=200, description="Sucesso"),
-     *     @OA\Response(response=401, description="Não autorizado"),
-     *     @OA\Response(response=404, description="Rastreador não encontrado")
-     * )
-     */
+    #[OA\Get(
+        path: "/api/v1/telemetria/{imei}/historico",
+        summary: "Retorna o histórico de posições dentro de um período",
+        security: [["bearerAuth" => []]],
+        tags: ["Telemetria"]
+    )]
+    #[OA\Parameter(name: "imei", description: "IMEI do rastreador", in: "path", required: true, schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "data_inicio", description: "Data de início (Y-m-d H:i:s)", in: "query", required: true, schema: new OA\Schema(type: "string", format: "date-time"))]
+    #[OA\Parameter(name: "data_fim", description: "Data final (Y-m-d H:i:s)", in: "query", required: true, schema: new OA\Schema(type: "string", format: "date-time"))]
+    #[OA\Response(response: 200, description: "Sucesso")]
+    #[OA\Response(response: 401, description: "Não autorizado")]
+    #[OA\Response(response: 404, description: "Rastreador não encontrado")]
     public function historico(Request $request, $imei)
     {
         $request->validate([
@@ -103,29 +84,15 @@ class TelemetryApiController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/v1/telemetria/{imei}/ultimos",
-     *     summary="Retorna os últimos N registros enviados pelo rastreador",
-     *     tags={"Telemetria"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="imei",
-     *         in="path",
-     *         required=true,
-     *         description="IMEI do rastreador",
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Parameter(
-     *         name="qtde_registros",
-     *         in="query",
-     *         required=false,
-     *         description="Quantidade de registros (Padrão: 50, Máximo: 500)",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(response=200, description="Sucesso")
-     * )
-     */
+    #[OA\Get(
+        path: "/api/v1/telemetria/{imei}/ultimos",
+        summary: "Retorna os últimos N registros enviados pelo rastreador",
+        security: [["bearerAuth" => []]],
+        tags: ["Telemetria"]
+    )]
+    #[OA\Parameter(name: "imei", description: "IMEI do rastreador", in: "path", required: true, schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "qtde_registros", description: "Quantidade de registros (Padrão: 50, Máximo: 500)", in: "query", required: false, schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Sucesso")]
     public function ultimos(Request $request, $imei)
     {
         $limit = $request->query('qtde_registros', 50);

@@ -1,0 +1,119 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "API de Telemetria GPS",
+        "description": "API dedicada à extração e consumo de dados de rastreamento de frotas.",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api/v1/telemetria/{imei}/historico": {
+            "get": {
+                "tags": [
+                    "Telemetria"
+                ],
+                "summary": "Retorna o histórico de posições dentro de um período",
+                "operationId": "ce6c7e70f5831aeae4ca2384a4b93c80",
+                "parameters": [
+                    {
+                        "name": "imei",
+                        "in": "path",
+                        "description": "IMEI do rastreador",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "data_inicio",
+                        "in": "query",
+                        "description": "Data de início (Y-m-d H:i:s)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "data_fim",
+                        "in": "query",
+                        "description": "Data final (Y-m-d H:i:s)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sucesso"
+                    },
+                    "401": {
+                        "description": "Não autorizado"
+                    },
+                    "404": {
+                        "description": "Rastreador não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/telemetria/{imei}/ultimos": {
+            "get": {
+                "tags": [
+                    "Telemetria"
+                ],
+                "summary": "Retorna os últimos N registros enviados pelo rastreador",
+                "operationId": "d06bb30c23028793099b03b726a8694b",
+                "parameters": [
+                    {
+                        "name": "imei",
+                        "in": "path",
+                        "description": "IMEI do rastreador",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "qtde_registros",
+                        "in": "query",
+                        "description": "Quantidade de registros (Padrão: 50, Máximo: 500)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sucesso"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Telemetria",
+            "description": "Telemetria"
+        }
+    ]
+}
