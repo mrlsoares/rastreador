@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Rastreador;
 use App\Models\Posicao;
+use App\Models\Evento;
 use Illuminate\Http\Request;
 
 /**
@@ -67,6 +68,11 @@ class TelemetryApiController extends Controller
             ->orderBy('data_hora', 'desc')
             ->paginate(100);
 
+        $eventos = Evento::where('rastreador_id', $rastreador->id)
+            ->whereBetween('created_at', [$request->data_inicio, $request->data_fim])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return response()->json([
             'sucesso' => true,
             'rastreador' => [
@@ -74,7 +80,26 @@ class TelemetryApiController extends Controller
                 'nome' => $rastreador->nome,
                 'sos_ativo' => $rastreador->em_panico
             ],
-            'registros' => $posicoes
+            'eventos' => $eventos->map(function($ev) {
+                return [
+                    'tipo' => 'evento',
+                    'categoria' => $ev->tipo,
+                    'descricao' => $ev->descricao,
+                    'data_hora' => $ev->created_at ? $ev->created_at->format('d/m/Y H:i') : null,
+                    'ligado' => (int) $ev->botao_ligado,
+                    'desligado' => (int) $ev->botao_desligado,
+                ];
+            }),
+            'registros' => $posicoes->through(function($pos) {
+                return [
+                    'tipo' => 'posicao',
+                    'data_hora' => $pos->data_hora ? $pos->data_hora->format('d/m/Y H:i') : null,
+                    'latitude' => (float) $pos->latitude,
+                    'longitude' => (float) $pos->longitude,
+                    'velocidade' => (int) $pos->velocidade,
+                    'sinal_gps' => (int) $pos->sinal_gps,
+                ];
+            })
         ]);
     }
 
@@ -113,6 +138,11 @@ class TelemetryApiController extends Controller
             ->limit($limit)
             ->get();
 
+        $eventos = Evento::where('rastreador_id', $rastreador->id)
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->get();
+
         return response()->json([
             'sucesso' => true,
             'rastreador' => [
@@ -120,6 +150,16 @@ class TelemetryApiController extends Controller
                 'nome' => $rastreador->nome,
                 'sos_ativo' => $rastreador->em_panico
             ],
+            'eventos' => $eventos->map(function($ev) {
+                return [
+                    'tipo' => 'evento',
+                    'categoria' => $ev->tipo,
+                    'descricao' => $ev->descricao,
+                    'data_hora' => $ev->created_at ? $ev->created_at->format('d/m/Y H:i') : null,
+                    'ligado' => (int) $ev->botao_ligado,
+                    'desligado' => (int) $ev->botao_desligado,
+                ];
+            }),
             'registros' => $posicoes->map(function($pos) {
                 return [
                     'tipo' => 'posicao',

@@ -141,12 +141,16 @@ class TrackerService
                 $rastreador->update(['ignicao' => ($tipo === 'IGNICAO_ON')]);
             }
 
+            $isPanico = in_array($tipo, ['SOS', 'PANICO']);
+
             Evento::create([
-                'rastreador_id' => $rastreador->id,
-                'posicao_id'    => $posicao?->id,
-                'tipo'          => $tipo,
-                'descricao'     => $evento['descricao'],
-                'codigo_raw'    => $dados['evento_codigo'] ?? '0000',
+                'rastreador_id'   => $rastreador->id,
+                'posicao_id'      => $posicao?->id,
+                'tipo'            => $tipo,
+                'descricao'       => $evento['descricao'],
+                'codigo_raw'      => $dados['evento_codigo'] ?? '0000',
+                'botao_ligado'    => $isPanico ? 1 : 0,
+                'botao_desligado' => $isPanico ? 0 : 1,
             ]);
 
             Log::info("[TrackerService] Evento detectado", [

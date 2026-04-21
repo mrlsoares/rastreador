@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Evento extends Model
 {
+    use HasFactory;
+
     protected $table = 'eventos';
 
     public $timestamps = false;
@@ -17,6 +20,8 @@ class Evento extends Model
         'tipo',
         'descricao',
         'codigo_raw',
+        'botao_ligado',
+        'botao_desligado',
     ];
 
     protected $casts = [

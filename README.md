@@ -153,3 +153,55 @@ Para visualizar em tempo real os pacotes chegando:
 ```bash
 tail -f /var/www/rastreador/storage/logs/laravel.log | grep "\[Socket\]"
 ```
+
+## 11. Habilitar a API Externa e WebSockets (Novas Funcionalidades)
+Caso seu servidor não tenha a documentação do Swagger ou as rotas de API instaladas, rode os comandos abaixo na pasta raiz (`/var/www/rastreador`):
+
+```bash
+# 1. Baixar pacote do Swagger/Documentação
+composer require "darkaonline/l5-swagger"
+
+# 2. Publicar arquivos base do Swagger
+php artisan vendor:publish --provider "L5Swagger\L5SwaggerServiceProvider"
+
+# 3. Instalar o ecossistema de Tokens (Sanctum)
+php artisan install:api --without-migration-prompt
+
+# 4. Rodar as migrações finais (Criará a tabela de tokens)
+php artisan migrate
+
+# 5. Gerar o painel visual (Acesse depois via http://seu_dominio/api/documentation)
+php artisan l5-swagger:generate
+```
+
+## 12. Manter o WebSocket (Reverb) Rodando (Para Posição ao Vivo no Mapa)
+Assim como o Socket Listener, o mapa em tempo real precisa que o **Reverb** fique ativo. Crie um segundo serviço no Systemd:
+
+```bash
+sudo nano /etc/systemd/system/rastreador-reverb.service
+```
+
+*Cole o seguinte:*
+```ini
+[Unit]
+Description=Laravel Reverb WebSocket Server
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/var/www/rastreador
+ExecStart=/usr/bin/php artisan reverb:start --host=0.0.0.0 --port=8080
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**Ativar e Iniciar o Reverb:**
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable rastreador-reverb
+sudo systemctl start rastreador-reverb
+```
+Lembre-se de liberar a porta `8080` (se não usar o proxy reverso via nginx HTTPS) liberando no firewall: `sudo firewall-cmd --permanent --add-port=8080/tcp`. Se usar HTTPS com a configuração Nginx que montamos, passe tudo via porta `443`.
