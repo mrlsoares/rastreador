@@ -22,4 +22,10 @@ Route::prefix('v1')->group(function () {
     Route::get('/posicoes', [PosicaoApiController::class, 'index']);
     Route::get('/rastreadores/{id}/posicoes', [PosicaoApiController::class, 'porRastreador']);
     Route::get('/rastreadores/{id}/ultima-posicao', [PosicaoApiController::class, 'ultimaPosicao']);
+
+    // Telemetria Externa (Protegida)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/telemetria/{imei}/historico', [\App\Http\Controllers\Api\TelemetryApiController::class, 'historico']);
+        Route::get('/telemetria/{imei}/ultimos', [\App\Http\Controllers\Api\TelemetryApiController::class, 'ultimos']);
+    });
 });
