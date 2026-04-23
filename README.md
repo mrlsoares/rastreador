@@ -205,3 +205,83 @@ sudo systemctl enable rastreador-reverb
 sudo systemctl start rastreador-reverb
 ```
 Lembre-se de liberar a porta `8080` (se não usar o proxy reverso via nginx HTTPS) liberando no firewall: `sudo firewall-cmd --permanent --add-port=8080/tcp`. Se usar HTTPS com a configuração Nginx que montamos, passe tudo via porta `443`.
+
+---
+
+## 13. Listener TCP Assíncrono de Alta Performance (Workerman)
+
+Para ambientes com **muitos rastreadores conectados simultaneamente**, o sistema possui um listener alternativo baseado no [Workerman](https://www.workerman.net/). Ele substitui o `socket:listen` original, suportando milhares de conexões sem bloqueio.
+
+### O que muda
+| Comando                        | Modelo       | Rastreadores suportados      |
+|-------------------------------|--------------|------------------------------|
+| `php artisan socket:listen`   | Bloqueante   | Sequencial (um por vez)      |
+| `php artisan workerman:listen`| Assíncrono   | Milhares em simultâneo       |
+
+### Como usar em Desenvolvimento
+```bash
+# Iniciar com 4 workers (padrão)
+php artisan workerman:listen start
+
+# Parar
+php artisan workerman:listen stop
+
+# Ver status
+php artisan workerman:listen status
+```
+
+### Variáveis de Ambiente (`.env`)
+```env
+# Endereço e porta de escuta (mesmas do socket original)
+SOCKET_HOST=0.0.0.0
+SOCKET_PORT=5023
+
+# Número de processos worker (recomendado: núcleos do servidor)
+SOCKET_WORKERS=4
+```
+
+### Monitoramento por IMEI (Logs)
+O Workerman identifica cada rastreador pelo seu IMEI assim que o primeiro pacote é recebido. Para acompanhar um rastreador específico em tempo real:
+```bash
+tail -f /var/www/rastreador/storage/logs/laravel.log | grep "868022030645402"
+```
+
+---
+
+## 14. Manter o Workerman Rodando com Supervisor (Produção — CentOS)
+
+Instale o Supervisor para garantir que o listener seja reiniciado automaticamente em caso de falha ou reinicialização do servidor:
+
+### Instalar o Supervisor
+```bash
+sudo yum install -y python3-pip
+sudo pip3 install supervisor
+
+# Ou via pacote do sistema:
+sudo yum install -y supervisor
+```
+
+### Copiar a Configuração Inclusa
+```bash
+sudo cp /var/www/rastreador/deploy/supervisor/rastreador-workerman.ini /etc/supervisord.d/
+```
+
+### Ativar
+```bash
+# Recarregar a configuração
+sudo supervisorctl reread
+sudo supervisorctl update
+
+# Verificar o status
+sudo supervisorctl status rastreador-workerman
+```
+
+### Comandos Úteis
+```bash
+# Reiniciar o listener
+sudo supervisorctl restart rastreador-workerman
+
+# Ver os logs do Supervisor
+sudo tail -f /var/log/supervisor/rastreador-workerman.log
+```
+
