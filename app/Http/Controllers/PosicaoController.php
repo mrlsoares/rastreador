@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Posicao;
 use App\Models\Rastreador;
+use App\Models\Esp32Dispositivo;
 use Illuminate\Http\Request;
 
 class PosicaoController extends Controller
@@ -62,5 +63,18 @@ class PosicaoController extends Controller
         })->filter()->values();
 
         return view('rastreadores.mapa', compact('rastreadores', 'ultimasPosicoes'));
+    }
+
+    /**
+     * Exibe o mapa exclusivo para dispositivos ESP32.
+     */
+    public function mapaEsp32(Request $request)
+    {
+        $dispositivos = Esp32Dispositivo::where('ativo', true)
+            ->with(['ultimaTelemetria'])
+            ->orderBy('nome')
+            ->get();
+
+        return view('rastreadores.mapa_esp32', compact('dispositivos'));
     }
 }

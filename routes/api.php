@@ -28,4 +28,10 @@ Route::prefix('v1')->group(function () {
         Route::get('/telemetria/{imei}/historico', [\App\Http\Controllers\Api\TelemetryApiController::class, 'historico']);
         Route::get('/telemetria/{imei}/ultimos', [\App\Http\Controllers\Api\TelemetryApiController::class, 'ultimos']);
     });
+
+    // Sub-sistema ESP32 (Novas Tabelas)
+    Route::prefix('esp32')->group(function () {
+        Route::post('/telemetry', [\App\Http\Controllers\Api\Esp32TelemetryController::class, 'store']);
+        Route::get('/fleet', [\App\Http\Controllers\Api\Esp32TelemetryController::class, 'index']);
+    });
 });
