@@ -33,9 +33,22 @@ class WorkermanListen extends Command
         $daemonize = $this->option('daemonize');
 
         // Configuração do Workerman para rodar dentro do Laravel
-        Worker::$pidFile    = storage_path('framework/workerman.pid');
+        $pidPath = storage_path('framework');
+        if (!is_dir($pidPath)) {
+            mkdir($pidPath, 0775, true);
+        }
+
+        Worker::$pidFile    = $pidPath . '/workerman.pid';
         Worker::$logFile    = storage_path('logs/workerman.log');
         Worker::$statusFile = storage_path('framework/workerman.status');
+
+        // Se estivermos iniciando e o processo não existir de fato, limpa o PID antigo
+        if ($action === 'start' && file_exists(Worker::$pidFile)) {
+            $pid = file_get_contents(Worker::$pidFile);
+            if (!posix_getpgid($pid)) {
+                unlink(Worker::$pidFile);
+            }
+        }
 
         if ($daemonize) {
             Worker::$daemonize = true;

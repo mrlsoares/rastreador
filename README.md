@@ -17,7 +17,8 @@ No CentOS, recomenda-se habilitar o repositório Remi para versões mais recente
 ```bash
 sudo dnf install -y https://rpms.remirepo.net/enterprise/remi-release-9.rpm  # Para CentOS/Alma 9
 sudo dnf module enable php:remi-8.2 -y
-sudo dnf install -y php php-cli php-fpm php-mysqlnd php-xml php-mbstring php-curl php-zip
+sudo dnf install -y php php-cli php-fpm php-mysqlnd php-xml php-mbstring php-curl php-zip php-process php-devel php-pear
+sudo pecl install event # Recomendado para Workerman
 ```
 
 ## 3. Instalar o Composer
@@ -272,8 +273,33 @@ sudo cp /var/www/rastreador/deploy/supervisor/rastreador-workerman.ini /etc/supe
 sudo supervisorctl reread
 sudo supervisorctl update
 
-# Verificar o status
 sudo supervisorctl status rastreador-workerman
+
+### Configurações de Segurança (CentOS Stream 10)
+
+**1. Firewall (Liberar Porta 5023)**
+```bash
+sudo firewall-cmd --permanent --add-port=5023/tcp
+sudo firewall-cmd --reload
+```
+
+**2. SELinux (Permissões de Rede e Escrita)**
+Se o `sestatus` mostrar `enforcing`, execute:
+```bash
+# Permitir que o PHP/Nginx se conecte à rede (importante para o socket)
+sudo setsebool -P httpd_can_network_connect 1
+
+# Permitir escrita nas pastas do Laravel
+sudo chcon -Rt httpd_sys_rw_content_t /var/www/rastreador/storage
+sudo chcon -Rt httpd_sys_rw_content_t /var/www/rastreador/bootstrap/cache
+```
+
+**3. Usuário Nginx**
+Certifique-se de que o usuário no `/etc/php-fpm.d/www.conf` e no Supervisor coincida (geralmente `nginx` no CentOS Stream):
+```bash
+sudo chown -R nginx:nginx /var/www/rastreador/storage
+sudo chmod -R 775 /var/www/rastreador/storage
+```
 ```
 
 ### Comandos Úteis
