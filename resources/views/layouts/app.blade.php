@@ -330,6 +330,9 @@
         <a href="{{ route('mapa') }}"            class="nav-item {{ request()->routeIs('mapa')                   ? 'active' : '' }}">
             <i class="fas fa-map"></i> Mapa ao Vivo
         </a>
+        <a href="{{ route('mapa.esp32') }}"      class="nav-item {{ request()->routeIs('mapa.esp32')             ? 'active' : '' }}">
+            <i class="fas fa-microchip"></i> Mapa ESP32
+        </a>
         <a href="{{ route('rastreadores.index') }}" class="nav-item {{ request()->routeIs('rastreadores.*')      ? 'active' : '' }}">
             <i class="fas fa-truck"></i> Rastreadores
         </a>
