@@ -12,6 +12,7 @@
         "laravel/reverb": "^1.10",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
+        "swagger-api/swagger-ui": "^5.32",
         "workerman/workerman": "^5.1"
     },
     "require-dev": {
