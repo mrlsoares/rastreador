@@ -269,6 +269,9 @@ sudo cp /var/www/rastreador/deploy/supervisor/rastreador-workerman.ini /etc/supe
 
 ### Ativar
 ```bash
+# Iniciar o serviço do Supervisor (necessário antes de usar o supervisorctl)
+sudo systemctl enable --now supervisord
+
 # Recarregar a configuração
 sudo supervisorctl reread
 sudo supervisorctl update
