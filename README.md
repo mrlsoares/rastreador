@@ -314,3 +314,69 @@ sudo supervisorctl restart rastreador-workerman
 sudo tail -f /var/log/supervisor/rastreador-workerman.log
 ```
 
+---
+
+## 15. Troubleshooting: Swagger UI não carrega assets (CentOS 10)
+
+### Sintoma
+Ao acessar `/api/documentation`, a tela fica em branco ou exibe:
+- `L5SwaggerException: Requested L5 Swagger asset file (swagger-ui.css) does not exist`
+- `Failed to load API definition. Fetch error: response status is 403 /docs/api-docs.json`
+
+### Causa Raiz
+No CentOS 10 com PHP 8.4, ocorre uma combinação de três problemas:
+
+1. **Extração incompleta**: O Composer falha ao extrair `swagger-api/swagger-ui` por falta do `unzip`, deixando a pasta `dist/` vazia.
+2. **SELinux bloqueando leitura**: O contexto de segurança impede o Nginx de ler os arquivos mesmo com permissões POSIX corretas.
+3. **Rota `/docs/asset/` bloqueada**: O controlador PHP do L5-Swagger tenta servir arquivos da `vendor/`, mas o Nginx bloqueia o acesso.
+
+### Solução Definitiva
+
+**Passo 1 — Instalar o `unzip` e reinstalar o pacote**
+```bash
+sudo dnf install -y unzip
+cd /var/www/rastreador
+composer require swagger-api/swagger-ui
+
+# Confirma que os arquivos foram extraídos (~1.5MB)
+ls -lh vendor/swagger-api/swagger-ui/dist/swagger-ui-bundle.js
+```
+
+**Passo 2 — Publicar os assets na pasta `public/`**
+```bash
+mkdir -p public/vendor/swagger-api/swagger-ui/dist
+cp -r vendor/swagger-api/swagger-ui/dist/* public/vendor/swagger-api/swagger-ui/dist/
+
+chown -R nginx:nginx public/vendor
+chmod -R 755 public/vendor
+chcon -R -t httpd_sys_content_t public/vendor
+```
+
+**Passo 3 — Configurar o L5-Swagger para caminhos estáticos**
+
+Adicione ao `.env`:
+```env
+L5_SWAGGER_USE_ABSOLUTE_PATH=false
+```
+
+**Passo 4 — Corrigir contexto SELinux**
+```bash
+chcon -R -t httpd_sys_content_t /var/www/rastreador/public
+chcon -R -t httpd_sys_rw_content_t /var/www/rastreador/storage
+```
+
+**Passo 5 — Limpar caches e regenerar**
+```bash
+php artisan config:clear
+php artisan optimize:clear
+php artisan l5-swagger:generate
+sudo systemctl reload nginx
+```
+
+### Verificação
+```bash
+# Deve retornar 200
+curl -s -o /dev/null -w "%{http_code}" https://seu_dominio/vendor/swagger-api/swagger-ui/dist/swagger-ui.css
+```
+
+> **⚠️ Atenção pós-update:** Sempre que o `composer update` atualizar o `swagger-api/swagger-ui`, repita o **Passo 2** para sincronizar os novos arquivos na `public/vendor/`.

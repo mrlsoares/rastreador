@@ -2,26 +2,25 @@
 
 namespace App\Services\Protocols;
 
-use Illuminate\Support\Facades\Log;
-
 /**
- * Gerenciador de protocolos para selecionar o parser correto.
+ * Gerenciador de protocolos — padrão Strategy com injeção de dependência.
+ *
+ * Conforme OCP (SOLID): adicionar um novo protocolo requer apenas registrar
+ * a nova implementação de ProtocolParserInterface no AppServiceProvider,
+ * sem modificar esta classe.
+ *
+ * @see App\Providers\AppServiceProvider::register()
  */
 class ProtocolManager
 {
-    protected array $parsers = [];
-
-    public function __construct()
-    {
-        // Registra os protocolos suportados
-        $this->parsers[] = new Gt06Parser();
-        $this->parsers[] = new Jt808Parser();
-        $this->parsers[] = new TqParser();
-        $this->parsers[] = new TrxParser();
-    }
+    /** @param ProtocolParserInterface[] $parsers */
+    public function __construct(
+        protected readonly array $parsers = []
+    ) {}
 
     /**
      * Encontra o parser adequado para os dados recebidos.
+     * Retorna null se nenhum protocolo reconhecer o pacote.
      */
     public function getParser(string $raw): ?ProtocolParserInterface
     {
@@ -32,5 +31,15 @@ class ProtocolManager
         }
 
         return null;
+    }
+
+    /**
+     * Retorna os nomes de todos os protocolos registrados (útil para diagnóstico).
+     *
+     * @return string[]
+     */
+    public function getRegisteredProtocols(): array
+    {
+        return array_map(fn($p) => $p->getName(), $this->parsers);
     }
 }
