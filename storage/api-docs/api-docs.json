@@ -6,6 +6,388 @@
         "version": "1.0.0"
     },
     "paths": {
+        "/api/v1/esp32/dispositivos": {
+            "get": {
+                "tags": [
+                    "ESP32 - Dispositivos"
+                ],
+                "summary": "Lista todos os dispositivos ESP32 cadastrados",
+                "description": "Retorna a lista paginada de dispositivos com sua última telemetria.",
+                "operationId": "6aa06b429585aade2ff194e6d41da475",
+                "parameters": [
+                    {
+                        "name": "ativo",
+                        "in": "query",
+                        "description": "Filtrar por status (1=ativos, 0=inativos)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "enum": [
+                                0,
+                                1
+                            ]
+                        }
+                    },
+                    {
+                        "name": "por_pagina",
+                        "in": "query",
+                        "description": "Itens por página (padrão 15)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada de dispositivos"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "ESP32 - Dispositivos"
+                ],
+                "summary": "Cadastra um novo dispositivo ESP32 manualmente",
+                "description": "Útil para pré-registrar um dispositivo antes de ele enviar o primeiro pacote.",
+                "operationId": "34bcac34995d0ac5e2a1194d46569046",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "identificador"
+                                ],
+                                "properties": {
+                                    "identificador": {
+                                        "type": "string",
+                                        "example": "AA:BB:CC:DD:EE:FF"
+                                    },
+                                    "nome": {
+                                        "type": "string",
+                                        "example": "Sensor da Portaria"
+                                    },
+                                    "descricao": {
+                                        "type": "string",
+                                        "example": "ESP32 instalado na portaria principal"
+                                    },
+                                    "ativo": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Dispositivo criado"
+                    },
+                    "409": {
+                        "description": "Identificador já cadastrado"
+                    },
+                    "422": {
+                        "description": "Dados inválidos"
+                    }
+                }
+            }
+        },
+        "/api/v1/esp32/dispositivos/{identificador}": {
+            "get": {
+                "tags": [
+                    "ESP32 - Dispositivos"
+                ],
+                "summary": "Retorna os detalhes de um dispositivo ESP32",
+                "operationId": "9c3ac3e74c1da701aae146c013568d69",
+                "parameters": [
+                    {
+                        "name": "identificador",
+                        "in": "path",
+                        "description": "MAC Address ou ID do dispositivo",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detalhes do dispositivo com última telemetria"
+                    },
+                    "404": {
+                        "description": "Dispositivo não encontrado"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "ESP32 - Dispositivos"
+                ],
+                "summary": "Atualiza os dados cadastrais de um dispositivo ESP32",
+                "operationId": "356ced5cde9f6a5ff3eb50761d062a8e",
+                "parameters": [
+                    {
+                        "name": "identificador",
+                        "in": "path",
+                        "description": "MAC Address ou ID do dispositivo",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "nome": {
+                                        "type": "string",
+                                        "example": "Sensor Atualizado"
+                                    },
+                                    "descricao": {
+                                        "type": "string",
+                                        "example": "Localização: Galpão B"
+                                    },
+                                    "ativo": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Dispositivo atualizado"
+                    },
+                    "404": {
+                        "description": "Dispositivo não encontrado"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "ESP32 - Dispositivos"
+                ],
+                "summary": "Remove um dispositivo ESP32 e todo o seu histórico de telemetria",
+                "operationId": "3048642ccf5b9652b60aa6bcdf2cb1a9",
+                "parameters": [
+                    {
+                        "name": "identificador",
+                        "in": "path",
+                        "description": "MAC Address ou ID do dispositivo",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Dispositivo removido com sucesso"
+                    },
+                    "404": {
+                        "description": "Dispositivo não encontrado"
+                    }
+                }
+            }
+        },
+        "/api/v1/esp32/telemetry": {
+            "post": {
+                "tags": [
+                    "ESP32"
+                ],
+                "summary": "Recebe e processa dados de telemetria de uma placa ESP32",
+                "description": "Endpoint público para ingestão de dados. Cria o dispositivo automaticamente se não existir (firstOrCreate por identificador/MAC).",
+                "operationId": "4e11f793b4dc03072b6fca9b20f7c082",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "identificador"
+                                ],
+                                "properties": {
+                                    "identificador": {
+                                        "description": "MAC Address ou ID único do chip",
+                                        "type": "string",
+                                        "example": "AA:BB:CC:DD:EE:FF"
+                                    },
+                                    "nome": {
+                                        "description": "Nome amigável do dispositivo",
+                                        "type": "string",
+                                        "example": "ESP32-Caminhão-01"
+                                    },
+                                    "lat": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": -23.55052
+                                    },
+                                    "lon": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": -46.6333
+                                    },
+                                    "bateria": {
+                                        "description": "Voltagem da bateria (V)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 3.85
+                                    },
+                                    "temp": {
+                                        "description": "Temperatura em °C",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 34.5
+                                    },
+                                    "vel": {
+                                        "description": "Velocidade em km/h",
+                                        "type": "integer",
+                                        "example": 60
+                                    },
+                                    "timestamp": {
+                                        "description": "Data/hora do dispositivo (opcional, usa now() se omitido)",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2026-05-03T20:00:00Z"
+                                    },
+                                    "extra": {
+                                        "description": "Payload extra em JSON livre",
+                                        "type": "object",
+                                        "example": {
+                                            "sinal_gsm": -75
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Telemetria processada com sucesso"
+                    },
+                    "422": {
+                        "description": "Dados inválidos"
+                    },
+                    "500": {
+                        "description": "Erro interno"
+                    }
+                }
+            }
+        },
+        "/api/v1/esp32/fleet": {
+            "get": {
+                "tags": [
+                    "ESP32"
+                ],
+                "summary": "Retorna todos os dispositivos ESP32 ativos com a última telemetria",
+                "description": "Snapshot em tempo real da frota de placas ESP32. Ideal para atualizar pins no mapa.",
+                "operationId": "f40007ece69a4e442c5401c25b4189d3",
+                "responses": {
+                    "200": {
+                        "description": "Lista de dispositivos ativos com última telemetria"
+                    }
+                }
+            }
+        },
+        "/api/v1/esp32/{identificador}/historico": {
+            "get": {
+                "tags": [
+                    "ESP32"
+                ],
+                "summary": "Retorna o histórico de telemetria de um dispositivo ESP32 por período",
+                "operationId": "53e2ebfd3a88b7dfb2d764be24071e78",
+                "parameters": [
+                    {
+                        "name": "identificador",
+                        "in": "path",
+                        "description": "MAC Address ou ID do dispositivo",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "data_inicio",
+                        "in": "query",
+                        "description": "Data de início (Y-m-d H:i:s)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "data_fim",
+                        "in": "query",
+                        "description": "Data final (Y-m-d H:i:s)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "por_pagina",
+                        "in": "query",
+                        "description": "Registros por página (padrão 100)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Histórico paginado"
+                    },
+                    "404": {
+                        "description": "Dispositivo não encontrado"
+                    },
+                    "422": {
+                        "description": "Parâmetros inválidos"
+                    }
+                }
+            }
+        },
+        "/api/v1/esp32/{identificador}/ultima": {
+            "get": {
+                "tags": [
+                    "ESP32"
+                ],
+                "summary": "Retorna a última telemetria recebida de um dispositivo ESP32",
+                "operationId": "bf971a537e938c54b9614299764a3465",
+                "parameters": [
+                    {
+                        "name": "identificador",
+                        "in": "path",
+                        "description": "MAC Address ou ID do dispositivo",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Última telemetria do dispositivo"
+                    },
+                    "404": {
+                        "description": "Dispositivo ou telemetria não encontrado"
+                    }
+                }
+            }
+        },
         "/api/v1/telemetria/{imei}/historico": {
             "get": {
                 "tags": [
@@ -111,6 +493,14 @@
         }
     },
     "tags": [
+        {
+            "name": "ESP32 - Dispositivos",
+            "description": "ESP32 - Dispositivos"
+        },
+        {
+            "name": "ESP32",
+            "description": "ESP32"
+        },
         {
             "name": "Telemetria",
             "description": "Telemetria"
