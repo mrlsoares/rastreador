@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\PosicaoApiController;
 use App\Http\Controllers\Api\TelemetryApiController;
 use App\Http\Controllers\Api\Esp32TelemetryController;
 use App\Http\Controllers\Api\Esp32DispositivoController;
+use App\Http\Controllers\Api\TelemetriaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,6 +15,9 @@ use App\Http\Controllers\Api\Esp32DispositivoController;
 */
 
 Route::prefix('v1')->group(function () {
+    // Ingestão de Telemetria (ESP32)
+    Route::post('/telemetria', [TelemetriaController::class, 'store'])->middleware('api_key');
+
 
     // -------------------------------------------------------------------------
     // Rastreadores TRX-16
