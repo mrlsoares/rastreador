@@ -44,9 +44,9 @@ class Esp32TelemetryController extends Controller
             ]
         )
     )]
-    #[OA\Response(response: 201, description: 'Telemetria processada com sucesso')]
-    #[OA\Response(response: 422, description: 'Dados inválidos')]
-    #[OA\Response(response: 500, description: 'Erro interno')]
+    #[OA\Response(response: 201, description: 'Telemetria processada com sucesso', content: new OA\JsonContent())]
+    #[OA\Response(response: 422, description: 'Dados inválidos', content: new OA\JsonContent())]
+    #[OA\Response(response: 500, description: 'Erro interno', content: new OA\JsonContent())]
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [

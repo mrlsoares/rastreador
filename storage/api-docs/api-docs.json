@@ -84,13 +84,28 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Dispositivo criado"
+                        "description": "Dispositivo criado",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
                     },
                     "409": {
-                        "description": "Identificador já cadastrado"
+                        "description": "Identificador já cadastrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
                     },
                     "422": {
-                        "description": "Dados inválidos"
+                        "description": "Dados inválidos",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
                     }
                 }
             }
@@ -274,13 +289,28 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Telemetria processada com sucesso"
+                        "description": "Telemetria processada com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
                     },
                     "422": {
-                        "description": "Dados inválidos"
+                        "description": "Dados inválidos",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
                     },
                     "500": {
-                        "description": "Erro interno"
+                        "description": "Erro interno",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
                     }
                 }
             }

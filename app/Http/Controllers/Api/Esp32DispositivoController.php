@@ -59,9 +59,9 @@ class Esp32DispositivoController extends Controller
             ]
         )
     )]
-    #[OA\Response(response: 201, description: 'Dispositivo criado')]
-    #[OA\Response(response: 409, description: 'Identificador já cadastrado')]
-    #[OA\Response(response: 422, description: 'Dados inválidos')]
+    #[OA\Response(response: 201, description: 'Dispositivo criado', content: new OA\JsonContent())]
+    #[OA\Response(response: 409, description: 'Identificador já cadastrado', content: new OA\JsonContent())]
+    #[OA\Response(response: 422, description: 'Dados inválidos', content: new OA\JsonContent())]
     public function store(Request $request): JsonResponse
     {
         $request->validate([
