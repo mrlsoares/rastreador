@@ -139,10 +139,11 @@
                 <b style="color:#a78bfa; font-size: 1.1em;">${d.nome}</b><br>
                 <small>Identificador: ${d.identificador}</small><hr style="margin:5px 0">
                 ${statusTanqueHtml}
-                Bateria: ${t.bateria_vcc || '-'} V<br>
-                Temp: ${t.temperatura || '-'} °C<br>
+                SOS: ${botaoPanico ? '<span style="color:#22c55e; font-weight:bold;">Ativado</span>' : '<span style="color:#ef4444; font-weight:bold;">Desativado</span>'}<br>
+                Lat: ${lat} | Lon: ${lon}<br>
+                Bateria: ${t.bateria_vcc || '-'} V | Temp: ${t.temperatura || '-'} °C<br>
                 <hr style="margin:5px 0; border-color: #334155;">
-                <small>🕒 Último contato: ${new Date(t.data_hora).toLocaleString()}</small>
+                <small>🕒 Data do acesso: ${new Date(t.data_hora).toLocaleString()}</small>
             </div>
         `;
 
