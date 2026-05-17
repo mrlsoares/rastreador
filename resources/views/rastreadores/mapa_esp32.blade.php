@@ -69,6 +69,21 @@
     }
     .marker-label b { display: block; color: #a78bfa; }
     .telemetry-badge { font-size: 10px; padding: 2px 5px; border-radius: 3px; background: #334155; margin-right: 3px; }
+    
+    /* Popups Escuros Customizados (Premium) */
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+        background: #0f172a !important;
+        color: #fff !important;
+        border: 1px solid #334155;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
+        border-radius: 8px !important;
+    }
+    .leaflet-popup-content {
+        margin: 12px 16px !important;
+    }
+    .leaflet-popup-close-button {
+        color: #94a3b8 !important;
+    }
 </style>
 @endpush
 
