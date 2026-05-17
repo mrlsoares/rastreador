@@ -139,11 +139,24 @@
     }
 
     window.sincronizar = async function() {
-        const res = await fetch('/api/v1/esp32/fleet');
-        const dispositivos = await res.json();
-        dispositivos.forEach(d => {
-            if (d.ultima_telemetria) atualizarNoMapa(d.ultima_telemetria);
-        });
+        try {
+            const res = await fetch('/api/v1/esp32/fleet');
+            const json = await res.json();
+            const dispositivos = json.data || [];
+            dispositivos.forEach(d => {
+                if (d.ultima_telemetria) {
+                    const telemetria = d.ultima_telemetria;
+                    telemetria.dispositivo = {
+                        id: d.id,
+                        identificador: d.identificador,
+                        nome: d.nome
+                    };
+                    atualizarNoMapa(telemetria);
+                }
+            });
+        } catch(e) {
+            console.error("Erro sincronizando:", e);
+        }
     };
 
     window.centrarMapa = function() {
