@@ -110,25 +110,45 @@
         if (!lat || !lon) return;
 
         let marker = markers[d.identificador];
+        
+        // Verifica o payload extra para o estado do tanque
+        let botaoPanico = null;
+        if (t.payload_extra && t.payload_extra.botao_panico !== undefined) {
+            botaoPanico = t.payload_extra.botao_panico;
+        }
+
+        let corPino = '#8b5cf6'; // roxo padrão
+        let statusTanqueHtml = '';
+        
+        if (botaoPanico === false) {
+            corPino = '#ef4444'; // vermelho
+            statusTanqueHtml = '<span style="color: #ef4444; font-weight: bold;"><i class="fas fa-exclamation-triangle"></i> Tanque precisa ser abastecido</span><br>';
+        } else if (botaoPanico === true) {
+            corPino = '#22c55e'; // verde
+            statusTanqueHtml = '<span style="color: #22c55e; font-weight: bold;"><i class="fas fa-check-circle"></i> Nível OK (Abastecido)</span><br>';
+        }
+
         const icon = L.divIcon({
             className: 'custom-div-icon',
-            html: `<div class="marker-pin"></div><i class="fas fa-microchip"></i>`,
+            html: `<div class="marker-pin" style="background: ${corPino}"></div><i class="fas fa-microchip"></i>`,
             iconSize: [40, 40], iconAnchor: [20, 40]
         });
 
         const popup = `
             <div style="color:#fff">
-                <b style="color:#a78bfa">${d.nome}</b><br>
-                <small>${d.identificador}</small><hr style="margin:5px 0">
-                Lat: ${lat}<br>Lon: ${lon}<br>
+                <b style="color:#a78bfa; font-size: 1.1em;">${d.nome}</b><br>
+                <small>Identificador: ${d.identificador}</small><hr style="margin:5px 0">
+                ${statusTanqueHtml}
                 Bateria: ${t.bateria_vcc || '-'} V<br>
                 Temp: ${t.temperatura || '-'} °C<br>
-                <small>🕒 ${new Date(t.data_hora).toLocaleString()}</small>
+                <hr style="margin:5px 0; border-color: #334155;">
+                <small>🕒 Último contato: ${new Date(t.data_hora).toLocaleString()}</small>
             </div>
         `;
 
         if (marker) {
             marker.setLatLng([lat, lon]);
+            marker.setIcon(icon); // Atualiza a cor do ícone
             marker.getPopup().setContent(popup);
         } else {
             marker = L.marker([lat, lon], { icon: icon }).addTo(map);
