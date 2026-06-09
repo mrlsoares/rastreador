@@ -42,15 +42,18 @@ class TelemetryApiController extends Controller
             'data_fim' => 'required|date|after_or_equal:data_inicio',
         ]);
 
+        $dataInicio = $request->date('data_inicio', null, 'America/Sao_Paulo');
+        $dataFim = $request->date('data_fim', null, 'America/Sao_Paulo')->endOfDay();
+
         $rastreador = Rastreador::where('imei', $imei)->firstOrFail();
 
         $posicoes = Posicao::where('rastreador_id', $rastreador->id)
-            ->whereBetween('data_hora', [$request->data_inicio, $request->data_fim])
+            ->whereBetween('data_hora', [$dataInicio, $dataFim])
             ->orderBy('data_hora', 'desc')
             ->paginate(100);
 
         $eventos = Evento::where('rastreador_id', $rastreador->id)
-            ->whereBetween('created_at', [$request->data_inicio, $request->data_fim])
+            ->whereBetween('created_at', [$dataInicio, $dataFim])
             ->orderBy('created_at', 'desc')
             ->get();
 

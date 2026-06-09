@@ -123,8 +123,11 @@ class Esp32TelemetryController extends Controller
 
         $dispositivo = Esp32Dispositivo::where('identificador', $identificador)->firstOrFail();
 
+        $dataInicio = $request->date('data_inicio', null, 'America/Sao_Paulo');
+        $dataFim = $request->date('data_fim', null, 'America/Sao_Paulo')->endOfDay();
+
         $telemetrias = Esp32Telemetria::where('esp32_dispositivo_id', $dispositivo->id)
-            ->whereBetween('data_hora', [$request->data_inicio, $request->data_fim])
+            ->whereBetween('data_hora', [$dataInicio, $dataFim])
             ->orderBy('data_hora', 'desc')
             ->paginate($request->por_pagina ?? 100);
 

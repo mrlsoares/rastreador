@@ -27,11 +27,11 @@ class PosicaoApiController extends Controller
         }
 
         if ($request->filled('data_inicio')) {
-            $query->where('data_hora', '>=', $request->date('data_inicio'));
+            $query->where('data_hora', '>=', $request->date('data_inicio', null, 'America/Sao_Paulo'));
         }
 
         if ($request->filled('data_fim')) {
-            $query->where('data_hora', '<=', $request->date('data_fim')->endOfDay());
+            $query->where('data_hora', '<=', $request->date('data_fim', null, 'America/Sao_Paulo')->endOfDay());
         }
 
         return response()->json(
@@ -55,8 +55,8 @@ class PosicaoApiController extends Controller
 
         if ($request->filled('data_inicio') && $request->filled('data_fim')) {
             $query->periodo(
-                $request->date('data_inicio'),
-                $request->date('data_fim')->endOfDay()
+                $request->date('data_inicio', null, 'America/Sao_Paulo'),
+                $request->date('data_fim', null, 'America/Sao_Paulo')->endOfDay()
             );
         }
 

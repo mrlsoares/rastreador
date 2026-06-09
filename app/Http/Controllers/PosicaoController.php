@@ -16,8 +16,8 @@ class PosicaoController extends Controller
             'data_fim'    => 'nullable|date|after_or_equal:data_inicio',
         ]);
 
-        $dataInicio = $request->date('data_inicio') ?? now()->startOfDay();
-        $dataFim    = $request->date('data_fim')    ?? now()->endOfDay();
+        $dataInicio = $request->date('data_inicio', null, 'America/Sao_Paulo') ?? now('America/Sao_Paulo')->startOfDay();
+        $dataFim    = $request->date('data_fim', null, 'America/Sao_Paulo')    ?? now('America/Sao_Paulo')->endOfDay();
 
         $posicoes = $rastreador->posicoes()
             ->validas()
