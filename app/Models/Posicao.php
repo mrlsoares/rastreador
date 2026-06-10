@@ -38,6 +38,11 @@ class Posicao extends Model
         'created_at' => 'datetime',
     ];
 
+    protected function serializeDate(\DateTimeInterface $date): string
+    {
+        return \Illuminate\Support\Carbon::instance($date)->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i:s');
+    }
+
     public function rastreador(): BelongsTo
     {
         return $this->belongsTo(Rastreador::class);

@@ -32,6 +32,11 @@ class Rastreador extends Model
         'ultimo_contato' => 'datetime',
     ];
 
+    protected function serializeDate(\DateTimeInterface $date): string
+    {
+        return \Illuminate\Support\Carbon::instance($date)->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i:s');
+    }
+
     public function posicoes(): HasMany
     {
         return $this->hasMany(Posicao::class);

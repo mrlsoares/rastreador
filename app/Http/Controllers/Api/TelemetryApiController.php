@@ -42,15 +42,16 @@ class TelemetryApiController extends Controller
             'data_fim' => 'required|date|after_or_equal:data_inicio',
         ]);
 
-        $dataInicio = $request->date('data_inicio', null, 'America/Sao_Paulo');
-        $dataFim = $request->date('data_fim', null, 'America/Sao_Paulo')->endOfDay();
+        $dataInicio = $request->date('data_inicio', null, 'America/Sao_Paulo')->setTimezone('UTC');
+        $dataFim = $request->date('data_fim', null, 'America/Sao_Paulo')->endOfDay()->setTimezone('UTC');
 
         $rastreador = Rastreador::where('imei', $imei)->firstOrFail();
 
         $posicoes = Posicao::where('rastreador_id', $rastreador->id)
             ->whereBetween('data_hora', [$dataInicio, $dataFim])
             ->orderBy('data_hora', 'desc')
-            ->paginate(100);
+            ->paginate(100)
+            ->withQueryString();
 
         $eventos = Evento::where('rastreador_id', $rastreador->id)
             ->whereBetween('created_at', [$dataInicio, $dataFim])
@@ -69,7 +70,7 @@ class TelemetryApiController extends Controller
                     'tipo' => 'evento',
                     'categoria' => $ev->tipo,
                     'descricao' => $ev->descricao,
-                    'data_hora' => $ev->created_at ? $ev->created_at->format('d/m/Y H:i') : null,
+                    'data_hora' => $ev->created_at ? $ev->created_at->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i:s') : null,
                     'ligado' => (int) $ev->botao_ligado,
                     'desligado' => (int) $ev->botao_desligado,
                 ];
@@ -77,7 +78,7 @@ class TelemetryApiController extends Controller
             'registros' => $posicoes->through(function($pos) {
                 return [
                     'tipo' => 'posicao',
-                    'data_hora' => $pos->data_hora ? $pos->data_hora->format('d/m/Y H:i') : null,
+                    'data_hora' => $pos->data_hora ? $pos->data_hora->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i:s') : null,
                     'latitude' => (float) $pos->latitude,
                     'longitude' => (float) $pos->longitude,
                     'velocidade' => (int) $pos->velocidade,
@@ -125,7 +126,7 @@ class TelemetryApiController extends Controller
                     'tipo' => 'evento',
                     'categoria' => $ev->tipo,
                     'descricao' => $ev->descricao,
-                    'data_hora' => $ev->created_at ? $ev->created_at->format('d/m/Y H:i') : null,
+                    'data_hora' => $ev->created_at ? $ev->created_at->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i:s') : null,
                     'ligado' => (int) $ev->botao_ligado,
                     'desligado' => (int) $ev->botao_desligado,
                 ];
@@ -133,7 +134,7 @@ class TelemetryApiController extends Controller
             'registros' => $posicoes->map(function($pos) {
                 return [
                     'tipo' => 'posicao',
-                    'data_hora' => $pos->data_hora ? $pos->data_hora->format('d/m/Y H:i') : null,
+                    'data_hora' => $pos->data_hora ? $pos->data_hora->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i:s') : null,
                     'latitude' => (float) $pos->latitude,
                     'longitude' => (float) $pos->longitude,
                     'velocidade' => (int) $pos->velocidade,

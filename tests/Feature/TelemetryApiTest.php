@@ -48,4 +48,30 @@ class TelemetryApiTest extends TestCase
         
         $response->assertStatus(200)->assertJsonPath('sucesso', true);
     }
+
+    public function test_history_handles_timezones_and_formats_dates()
+    {
+        Sanctum::actingAs(User::factory()->create(), ['*']);
+        
+        $rastreador = Rastreador::factory()->create(['imei' => '1122334455']);
+        
+        // Posição 1: '2026-06-10 01:30:00' UTC -> local '2026-06-09 22:30:00' (Deve ser excluída do filtro de 2026-06-10)
+        $p1 = Posicao::factory()->create([
+            'rastreador_id' => $rastreador->id,
+            'data_hora' => '2026-06-10 01:30:00',
+        ]);
+
+        // Posição 2: '2026-06-11 01:30:00' UTC -> local '2026-06-10 22:30:00' (Deve ser incluída no filtro de 2026-06-10)
+        $p2 = Posicao::factory()->create([
+            'rastreador_id' => $rastreador->id,
+            'data_hora' => '2026-06-11 01:30:00',
+        ]);
+
+        $response = $this->getJson('/api/v1/telemetria/1122334455/historico?data_inicio=2026-06-10&data_fim=2026-06-10');
+
+        $response->assertStatus(200)
+                 ->assertJsonPath('sucesso', true)
+                 ->assertJsonCount(1, 'registros.data')
+                 ->assertJsonPath('registros.data.0.data_hora', '10/06/2026 22:30:00'); // Formato dd/mm/yyyy em local time (America/Sao_Paulo)
+    }
 }

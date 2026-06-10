@@ -26,6 +26,11 @@ class Esp32Dispositivo extends Model
         'ultimo_contato' => 'datetime',
     ];
 
+    protected function serializeDate(\DateTimeInterface $date): string
+    {
+        return \Illuminate\Support\Carbon::instance($date)->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i:s');
+    }
+
     public function telemetrias(): HasMany
     {
         return $this->hasMany(Esp32Telemetria::class, 'esp32_dispositivo_id');

@@ -27,15 +27,15 @@ class PosicaoApiController extends Controller
         }
 
         if ($request->filled('data_inicio')) {
-            $query->where('data_hora', '>=', $request->date('data_inicio', null, 'America/Sao_Paulo'));
+            $query->where('data_hora', '>=', $request->date('data_inicio', null, 'America/Sao_Paulo')->setTimezone('UTC'));
         }
 
         if ($request->filled('data_fim')) {
-            $query->where('data_hora', '<=', $request->date('data_fim', null, 'America/Sao_Paulo')->endOfDay());
+            $query->where('data_hora', '<=', $request->date('data_fim', null, 'America/Sao_Paulo')->endOfDay()->setTimezone('UTC'));
         }
 
         return response()->json(
-            $query->paginate($request->integer('per_page', 100))
+            $query->paginate($request->integer('per_page', 100))->withQueryString()
         );
     }
 
@@ -55,13 +55,13 @@ class PosicaoApiController extends Controller
 
         if ($request->filled('data_inicio') && $request->filled('data_fim')) {
             $query->periodo(
-                $request->date('data_inicio', null, 'America/Sao_Paulo'),
-                $request->date('data_fim', null, 'America/Sao_Paulo')->endOfDay()
+                $request->date('data_inicio', null, 'America/Sao_Paulo')->setTimezone('UTC'),
+                $request->date('data_fim', null, 'America/Sao_Paulo')->endOfDay()->setTimezone('UTC')
             );
         }
 
         return response()->json(
-            $query->paginate($request->integer('per_page', 100))
+            $query->paginate($request->integer('per_page', 100))->withQueryString()
         );
     }
 

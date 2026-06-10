@@ -9,8 +9,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Cria o schema 'rastreador' se não existir
-        DB::statement('CREATE SCHEMA IF NOT EXISTS rastreador');
+        // Cria o schema 'rastreador' se não existir (apenas para pgsql)
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('CREATE SCHEMA IF NOT EXISTS rastreador');
+        }
 
         Schema::create('rastreadores', function (Blueprint $table) {
             $table->id();

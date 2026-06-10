@@ -123,20 +123,21 @@ class Esp32TelemetryController extends Controller
 
         $dispositivo = Esp32Dispositivo::where('identificador', $identificador)->firstOrFail();
 
-        $dataInicio = $request->date('data_inicio', null, 'America/Sao_Paulo');
-        $dataFim = $request->date('data_fim', null, 'America/Sao_Paulo')->endOfDay();
+        $dataInicio = $request->date('data_inicio', null, 'America/Sao_Paulo')->setTimezone('UTC');
+        $dataFim = $request->date('data_fim', null, 'America/Sao_Paulo')->endOfDay()->setTimezone('UTC');
 
         $telemetrias = Esp32Telemetria::where('esp32_dispositivo_id', $dispositivo->id)
             ->whereBetween('data_hora', [$dataInicio, $dataFim])
             ->orderBy('data_hora', 'desc')
-            ->paginate($request->por_pagina ?? 100);
+            ->paginate($request->por_pagina ?? 100)
+            ->withQueryString();
 
         return response()->json([
             'success'     => true,
             'dispositivo' => [
                 'identificador'  => $dispositivo->identificador,
                 'nome'           => $dispositivo->nome,
-                'ultimo_contato' => $dispositivo->ultimo_contato,
+                'ultimo_contato' => $dispositivo->ultimo_contato ? $dispositivo->ultimo_contato->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i:s') : null,
             ],
             'telemetrias' => $telemetrias,
         ]);

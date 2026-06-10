@@ -34,6 +34,11 @@ class Esp32Telemetria extends Model
         'data_hora'     => 'datetime',
     ];
 
+    protected function serializeDate(\DateTimeInterface $date): string
+    {
+        return \Illuminate\Support\Carbon::instance($date)->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i:s');
+    }
+
     public function dispositivo(): BelongsTo
     {
         return $this->belongsTo(Esp32Dispositivo::class, 'esp32_dispositivo_id');
