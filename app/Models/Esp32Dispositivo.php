@@ -22,6 +22,11 @@ class Esp32Dispositivo extends Model
         'ultimo_contato',
     ];
 
+    // Nunca serializa o hash do token.
+    protected $hidden = [
+        'api_token',
+    ];
+
     protected $casts = [
         'ativo'          => 'boolean',
         'ultimo_contato' => 'datetime',
@@ -43,11 +48,35 @@ class Esp32Dispositivo extends Model
      */
     public function scopeDaEmpresaDoUsuario($query, ?\App\Models\User $user)
     {
-        if ($user && $user->hasRole('admin')) {
+        if ($user && $user->hasRole('super-admin')) {
             return $query;
         }
 
         return $query->where('empresa_id', $user?->empresa_id);
+    }
+
+    /**
+     * Gera um novo token de ingestão. Guarda apenas o hash SHA-256 e os 4
+     * últimos dígitos; devolve o token em claro UMA vez.
+     */
+    public function gerarTokenApi(): string
+    {
+        $plain = \Illuminate\Support\Str::random(48);
+
+        $this->forceFill([
+            'api_token'   => hash('sha256', $plain),
+            'token_last4' => substr($plain, -4),
+        ])->save();
+
+        return $plain;
+    }
+
+    /**
+     * Localiza um dispositivo pelo token em claro (compara o hash).
+     */
+    public static function porToken(string $plain): ?self
+    {
+        return static::where('api_token', hash('sha256', $plain))->first();
     }
 
     public function telemetrias(): HasMany

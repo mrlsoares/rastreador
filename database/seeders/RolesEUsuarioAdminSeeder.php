@@ -15,7 +15,7 @@ class RolesEUsuarioAdminSeeder extends Seeder
      */
     public function run(): void
     {
-        foreach (['admin', 'operador'] as $role) {
+        foreach (['super-admin', 'admin-empresa', 'operador'] as $role) {
             Role::findOrCreate($role, 'web');
         }
 
@@ -28,8 +28,8 @@ class RolesEUsuarioAdminSeeder extends Seeder
             ]
         );
 
-        if (! $admin->hasRole('admin')) {
-            $admin->assignRole('admin');
+        if (! $admin->hasRole('super-admin')) {
+            $admin->syncRoles(['super-admin']);
         }
     }
 }

@@ -20,20 +20,10 @@ class Esp32TelemetryService
      * @param array $data
      * @return Esp32Telemetria
      */
-    public function processPayload(array $data): Esp32Telemetria
+    public function registrarTelemetria(Esp32Dispositivo $dispositivo, array $data): Esp32Telemetria
     {
-        return DB::transaction(function () use ($data) {
-            // 1. Localiza ou cria o dispositivo (MAC Address/ID)
-            $dispositivo = Esp32Dispositivo::firstOrCreate(
-                ['identificador' => $data['identificador']],
-                [
-                    'empresa_id' => config('telemetria.default_empresa_id'),
-                    'nome' => $data['nome'] ?? 'ESP32-' . substr($data['identificador'], -4),
-                    'ativo' => true
-                ]
-            );
-
-            // 2. Registra a telemetria
+        return DB::transaction(function () use ($dispositivo, $data) {
+            // Registra a telemetria no dispositivo autenticado pelo token.
             $telemetria = $dispositivo->telemetrias()->create([
                 'latitude'      => $data['lat'] ?? null,
                 'longitude'     => $data['lon'] ?? null,

@@ -70,7 +70,7 @@ class Rastreador extends Model
      */
     public function scopeDaEmpresaDoUsuario($query, ?\App\Models\User $user)
     {
-        if ($user && $user->hasRole('admin')) {
+        if ($user && $user->hasRole('super-admin')) {
             return $query;
         }
 

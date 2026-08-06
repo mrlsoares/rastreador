@@ -39,31 +39,49 @@ class ApiSecurityTest extends TestCase
             ->assertJsonPath('success', true);
     }
 
-    // --- Ingestão máquina-a-máquina exige X-API-KEY (Fase 1 + 2) ---
+    // --- Ingestão ESP32 exige token por dispositivo (X-DEVICE-TOKEN) ---
 
-    public function test_ingest_rejects_without_api_key(): void
+    public function test_ingest_rejects_without_device_token(): void
     {
-        $this->postJson('/api/v1/esp32/telemetry', ['identificador' => 'AA:BB:CC:DD:EE:FF'])
+        $this->postJson('/api/v1/esp32/telemetry', ['lat' => -23.5])
             ->assertStatus(401);
     }
 
-    public function test_ingest_rejects_wrong_api_key(): void
+    public function test_ingest_rejects_wrong_device_token(): void
     {
-        $this->withHeader('X-API-KEY', 'chave-errada')
-            ->postJson('/api/v1/esp32/telemetry', ['identificador' => 'AA:BB:CC:DD:EE:FF'])
+        Esp32Dispositivo::create(['empresa_id' => 1, 'identificador' => 'AA:BB', 'ativo' => true])
+            ->gerarTokenApi();
+
+        $this->withHeader('X-DEVICE-TOKEN', 'token-invalido')
+            ->postJson('/api/v1/esp32/telemetry', ['lat' => -23.5])
             ->assertStatus(401);
     }
 
-    public function test_ingest_accepts_valid_api_key(): void
+    public function test_ingest_rejects_inactive_device(): void
     {
-        $this->withHeader('X-API-KEY', config('telemetria.api_key'))
-            ->postJson('/api/v1/esp32/telemetry', [
-                'identificador' => 'AA:BB:CC:DD:EE:FF',
-                'lat'           => -23.5,
-                'lon'           => -46.6,
-            ])
+        $device = Esp32Dispositivo::create(['empresa_id' => 1, 'identificador' => 'AA:BB', 'ativo' => false]);
+        $token = $device->gerarTokenApi();
+
+        $this->withHeader('X-DEVICE-TOKEN', $token)
+            ->postJson('/api/v1/esp32/telemetry', ['lat' => -23.5])
+            ->assertStatus(401);
+    }
+
+    public function test_ingest_accepts_valid_device_token_and_attributes_empresa(): void
+    {
+        $device = Esp32Dispositivo::create(['empresa_id' => 2, 'identificador' => 'AA:BB:CC', 'ativo' => true]);
+        $token = $device->gerarTokenApi();
+
+        $this->withHeader('X-DEVICE-TOKEN', $token)
+            ->postJson('/api/v1/esp32/telemetry', ['lat' => -23.5, 'lon' => -46.6])
             ->assertStatus(201)
             ->assertJsonPath('success', true);
+
+        // Telemetria fica no dispositivo (empresa 2) do token, sem chutar empresa padrão.
+        $this->assertDatabaseHas('esp32_telemetrias', [
+            'esp32_dispositivo_id' => $device->id,
+            'latitude'             => -23.5,
+        ]);
     }
 
     // --- Login emite token utilizável (Fase 1) ---
@@ -122,9 +140,25 @@ class ApiSecurityTest extends TestCase
         ]);
 
         $admin = User::factory()->create(['empresa_id' => 1]);
-        $admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $admin->assignRole(Role::findOrCreate('super-admin', 'web'));
         Sanctum::actingAs($admin, ['*']);
 
         $this->getJson('/api/v1/esp32/dispositivos/DEV-EMPRESA-2')->assertStatus(200);
+    }
+
+    public function test_cadastro_device_retorna_token_funcional(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['empresa_id' => 1]), ['*']);
+
+        $token = $this->postJson('/api/v1/esp32/dispositivos', ['identificador' => 'MAC-NEW'])
+            ->assertStatus(201)
+            ->json('device_token');
+
+        $this->assertNotEmpty($token);
+
+        // O token entregue no cadastro autentica a ingestão.
+        $this->withHeader('X-DEVICE-TOKEN', $token)
+            ->postJson('/api/v1/esp32/telemetry', ['lat' => -23.5])
+            ->assertStatus(201);
     }
 }

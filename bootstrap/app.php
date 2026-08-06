@@ -14,7 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'api_key' => \App\Http\Middleware\CheckApiKey::class,
+            'api_key'      => \App\Http\Middleware\CheckApiKey::class,
+            'device_token' => \App\Http\Middleware\DeviceToken::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

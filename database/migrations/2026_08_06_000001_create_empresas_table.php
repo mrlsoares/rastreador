@@ -24,11 +24,11 @@ return new class extends Migration
         $now = now();
         DB::table('empresas')->insert([
             [
-                'id' => 1, 'razao_social' => 'Empresa Padrão', 'nome_fantasia' => 'Padrão',
+                'id' => 1, 'razao_social' => 'Haufer', 'nome_fantasia' => 'Haufer',
                 'status' => 'ativo', 'created_at' => $now, 'updated_at' => $now,
             ],
             [
-                'id' => 2, 'razao_social' => 'Empresa 2', 'nome_fantasia' => 'Empresa 2',
+                'id' => 2, 'razao_social' => 'Teste Desenvolvimento', 'nome_fantasia' => 'teste desenvolvimento',
                 'status' => 'ativo', 'created_at' => $now, 'updated_at' => $now,
             ],
         ]);

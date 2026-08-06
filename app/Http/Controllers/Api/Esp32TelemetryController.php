@@ -49,16 +49,17 @@ class Esp32TelemetryController extends Controller
     #[OA\Response(response: 500, description: 'Erro interno', content: new OA\JsonContent())]
     public function store(Request $request): JsonResponse
     {
+        /** @var \App\Models\Esp32Dispositivo $dispositivo */
+        $dispositivo = $request->attributes->get('esp32_device');
+
         $validator = Validator::make($request->all(), [
-            'identificador' => 'required|string|max:50',
-            'nome'          => 'nullable|string|max:100',
-            'lat'           => 'nullable|numeric|between:-90,90',
-            'lon'           => 'nullable|numeric|between:-180,180',
-            'bateria'       => 'nullable|numeric|min:0',
-            'temp'          => 'nullable|numeric',
-            'vel'           => 'nullable|integer|min:0',
-            'timestamp'     => 'nullable|date',
-            'extra'         => 'nullable|array',
+            'lat'       => 'nullable|numeric|between:-90,90',
+            'lon'       => 'nullable|numeric|between:-180,180',
+            'bateria'   => 'nullable|numeric|min:0',
+            'temp'      => 'nullable|numeric',
+            'vel'       => 'nullable|integer|min:0',
+            'timestamp' => 'nullable|date',
+            'extra'     => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -66,7 +67,7 @@ class Esp32TelemetryController extends Controller
         }
 
         try {
-            $telemetria = $this->telemetryService->processPayload($request->all());
+            $telemetria = $this->telemetryService->registrarTelemetria($dispositivo, $request->all());
             return response()->json([
                 'success' => true,
                 'message' => 'Telemetria processada com sucesso',

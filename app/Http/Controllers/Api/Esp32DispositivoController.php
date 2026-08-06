@@ -79,10 +79,14 @@ class Esp32DispositivoController extends Controller
             'ativo'         => $request->ativo ?? true,
         ]);
 
+        // Token de ingestão do dispositivo — exibido apenas nesta resposta.
+        $token = $dispositivo->gerarTokenApi();
+
         return response()->json([
-            'success' => true,
-            'message' => 'Dispositivo cadastrado com sucesso.',
-            'data'    => $dispositivo,
+            'success'      => true,
+            'message'      => 'Dispositivo cadastrado com sucesso.',
+            'data'         => $dispositivo,
+            'device_token' => $token,
         ], 201);
     }
 
@@ -173,6 +177,33 @@ class Esp32DispositivoController extends Controller
         return response()->json([
             'success' => true,
             'message' => "Dispositivo '{$identificador}' e seu histórico foram removidos.",
+        ]);
+    }
+
+    // =========================================================================
+    // POST /api/v1/esp32/dispositivos/{identificador}/regenerar-token
+    // =========================================================================
+
+    #[OA\Post(
+        path: '/api/v1/esp32/dispositivos/{identificador}/regenerar-token',
+        summary: 'Gera um novo token de ingestão para o dispositivo (revoga o anterior)',
+        tags: ['ESP32 - Dispositivos']
+    )]
+    #[OA\Parameter(name: 'identificador', description: 'MAC Address ou ID do dispositivo', in: 'path', required: true, schema: new OA\Schema(type: 'string'))]
+    #[OA\Response(response: 200, description: 'Novo token gerado (exibido uma única vez)')]
+    #[OA\Response(response: 404, description: 'Dispositivo não encontrado')]
+    public function regenerarToken(Request $request, string $identificador): JsonResponse
+    {
+        $dispositivo = Esp32Dispositivo::daEmpresaDoUsuario($request->user())
+            ->where('identificador', $identificador)
+            ->firstOrFail();
+
+        $token = $dispositivo->gerarTokenApi();
+
+        return response()->json([
+            'success'      => true,
+            'message'      => 'Novo token gerado. O token anterior foi revogado.',
+            'device_token' => $token,
         ]);
     }
 }

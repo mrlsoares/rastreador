@@ -31,8 +31,13 @@ Route::prefix('v1')->group(function () {
     // -------------------------------------------------------------------------
     // Ingestão máquina-a-máquina (dispositivos enviam dados) — X-API-KEY
     // -------------------------------------------------------------------------
+    // Legado TRX (ESP32 antigo): chave global compartilhada.
     Route::middleware(['api_key', 'throttle:ingest'])->group(function () {
-        Route::post('/telemetria',      [TelemetriaController::class, 'store']);
+        Route::post('/telemetria', [TelemetriaController::class, 'store']);
+    });
+
+    // Ingestão ESP32: token por dispositivo (X-DEVICE-TOKEN).
+    Route::middleware(['device_token', 'throttle:ingest'])->group(function () {
         Route::post('/esp32/telemetry', [Esp32TelemetryController::class, 'store']);
     });
 
@@ -70,6 +75,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/dispositivos/{identificador}',    [Esp32DispositivoController::class, 'show']);
             Route::put('/dispositivos/{identificador}',    [Esp32DispositivoController::class, 'update']);
             Route::delete('/dispositivos/{identificador}', [Esp32DispositivoController::class, 'destroy']);
+            Route::post('/dispositivos/{identificador}/regenerar-token', [Esp32DispositivoController::class, 'regenerarToken']);
         });
     });
 });
