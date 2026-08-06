@@ -26,7 +26,7 @@ class Esp32TelemetryReceived implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new Channel('esp32-fleet'),
+            new PrivateChannel('esp32-fleet'),
         ];
     }
 

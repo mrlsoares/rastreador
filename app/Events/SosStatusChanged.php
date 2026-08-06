@@ -34,7 +34,7 @@ class SosStatusChanged implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new Channel('rastreamento'),
+            new PrivateChannel('rastreamento'),
         ];
     }
 

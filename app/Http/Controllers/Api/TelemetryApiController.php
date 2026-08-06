@@ -99,8 +99,11 @@ class TelemetryApiController extends Controller
     #[OA\Response(response: 200, description: "Sucesso")]
     public function ultimos(Request $request, $imei)
     {
-        $limit = $request->query('qtde_registros', 50);
-        if ($limit > 500) $limit = 500;
+        $request->validate([
+            'qtde_registros' => 'nullable|integer|min:1|max:500',
+        ]);
+
+        $limit = (int) $request->query('qtde_registros', 50);
 
         $rastreador = Rastreador::where('imei', $imei)->firstOrFail();
 

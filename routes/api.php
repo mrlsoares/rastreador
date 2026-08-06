@@ -31,7 +31,7 @@ Route::prefix('v1')->group(function () {
     // -------------------------------------------------------------------------
     // Ingestão máquina-a-máquina (dispositivos enviam dados) — X-API-KEY
     // -------------------------------------------------------------------------
-    Route::middleware('api_key')->group(function () {
+    Route::middleware(['api_key', 'throttle:ingest'])->group(function () {
         Route::post('/telemetria',      [TelemetriaController::class, 'store']);
         Route::post('/esp32/telemetry', [Esp32TelemetryController::class, 'store']);
     });
@@ -39,7 +39,7 @@ Route::prefix('v1')->group(function () {
     // -------------------------------------------------------------------------
     // Rotas autenticadas (token Bearer / Sanctum)
     // -------------------------------------------------------------------------
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
         Route::post('/logout', [AuthController::class, 'logout']);
 
