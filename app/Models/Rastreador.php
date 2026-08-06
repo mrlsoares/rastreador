@@ -14,6 +14,7 @@ class Rastreador extends Model
     protected $table = 'rastreadores';
 
     protected $fillable = [
+        'empresa_id',
         'imei',
         'nome',
         'placa',
@@ -56,5 +57,23 @@ class Rastreador extends Model
     public function scopeAtivos($query)
     {
         return $query->where('ativo', true);
+    }
+
+    public function empresa(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Empresa::class);
+    }
+
+    /**
+     * Restringe à empresa do usuário (multi-tenant). Admin (role 'admin')
+     * enxerga todas as empresas.
+     */
+    public function scopeDaEmpresaDoUsuario($query, ?\App\Models\User $user)
+    {
+        if ($user && $user->hasRole('admin')) {
+            return $query;
+        }
+
+        return $query->where('empresa_id', $user?->empresa_id);
     }
 }

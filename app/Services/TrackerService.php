@@ -93,7 +93,11 @@ class TrackerService
         DB::transaction(function () use ($dados) {
             $rastreador = Rastreador::firstOrCreate(
                 ['imei' => $dados['imei']],
-                ['nome' => 'Rastreador ' . substr($dados['imei'], -4), 'ativo' => true]
+                [
+                    'empresa_id' => config('telemetria.default_empresa_id'),
+                    'nome'       => 'Rastreador ' . substr($dados['imei'], -4),
+                    'ativo'      => true,
+                ]
             );
 
             $rastreador->update(['ultimo_contato' => now()]);

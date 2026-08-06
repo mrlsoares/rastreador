@@ -14,6 +14,7 @@ class Esp32Dispositivo extends Model
     protected $table = 'esp32_dispositivos';
 
     protected $fillable = [
+        'empresa_id',
         'identificador',
         'nome',
         'descricao',
@@ -29,6 +30,24 @@ class Esp32Dispositivo extends Model
     protected function serializeDate(\DateTimeInterface $date): string
     {
         return \Illuminate\Support\Carbon::instance($date)->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i:s');
+    }
+
+    public function empresa(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Empresa::class);
+    }
+
+    /**
+     * Restringe à empresa do usuário (multi-tenant). Admin (role 'admin')
+     * enxerga todas as empresas.
+     */
+    public function scopeDaEmpresaDoUsuario($query, ?\App\Models\User $user)
+    {
+        if ($user && $user->hasRole('admin')) {
+            return $query;
+        }
+
+        return $query->where('empresa_id', $user?->empresa_id);
     }
 
     public function telemetrias(): HasMany

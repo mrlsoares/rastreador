@@ -10,4 +10,13 @@ return [
     | após `php artisan config:cache`.
     */
     'api_key' => env('TELEMETRIA_API_KEY'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Empresa padrão da ingestão
+    |--------------------------------------------------------------------------
+    | Dispositivos/rastreadores criados automaticamente na ingestão (sem usuário
+    | autenticado) recebem esta empresa. id=1 é a "Empresa Padrão".
+    */
+    'default_empresa_id' => (int) env('TELEMETRIA_DEFAULT_EMPRESA_ID', 1),
 ];

@@ -18,8 +18,12 @@ class PosicaoApiController extends Controller
             'per_page'      => 'nullable|integer|min:1|max:500',
         ]);
 
+        // Restringe às posições de rastreadores da empresa do usuário.
+        $rastreadorIds = Rastreador::daEmpresaDoUsuario($request->user())->pluck('id');
+
         $query = Posicao::with('rastreador')
             ->validas()
+            ->whereIn('rastreador_id', $rastreadorIds)
             ->orderBy('data_hora', 'desc');
 
         if ($request->filled('rastreador_id')) {
@@ -41,7 +45,7 @@ class PosicaoApiController extends Controller
 
     public function porRastreador(Request $request, $id)
     {
-        $rastreador = Rastreador::findOrFail($id);
+        $rastreador = Rastreador::daEmpresaDoUsuario($request->user())->findOrFail($id);
 
         $request->validate([
             'data_inicio' => 'nullable|date',
@@ -65,9 +69,9 @@ class PosicaoApiController extends Controller
         );
     }
 
-    public function ultimaPosicao($id)
+    public function ultimaPosicao(Request $request, $id)
     {
-        $rastreador = Rastreador::findOrFail($id);
+        $rastreador = Rastreador::daEmpresaDoUsuario($request->user())->findOrFail($id);
 
         $posicao = $rastreador->posicoes()
             ->validas()

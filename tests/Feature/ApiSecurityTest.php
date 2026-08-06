@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\Esp32Dispositivo;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class ApiSecurityTest extends TestCase
@@ -91,5 +93,38 @@ class ApiSecurityTest extends TestCase
             'email'    => $user->email,
             'password' => 'errado',
         ])->assertStatus(422);
+    }
+
+    // --- Isolamento multi-tenant por empresa (Fase 4) ---
+
+    public function test_usuario_nao_ve_dispositivo_de_outra_empresa(): void
+    {
+        Esp32Dispositivo::create([
+            'empresa_id' => 2, 'identificador' => 'DEV-EMPRESA-2', 'ativo' => true,
+        ]);
+
+        Sanctum::actingAs(User::factory()->create(['empresa_id' => 1]), ['*']);
+
+        // Não aparece no snapshot da frota.
+        $this->getJson('/api/v1/esp32/fleet')
+            ->assertStatus(200)
+            ->assertJsonMissing(['identificador' => 'DEV-EMPRESA-2']);
+
+        // Acesso direto ao recurso de outra empresa retorna 404.
+        $this->getJson('/api/v1/esp32/dispositivos/DEV-EMPRESA-2')->assertStatus(404);
+        $this->deleteJson('/api/v1/esp32/dispositivos/DEV-EMPRESA-2')->assertStatus(404);
+    }
+
+    public function test_admin_ve_todas_as_empresas(): void
+    {
+        Esp32Dispositivo::create([
+            'empresa_id' => 2, 'identificador' => 'DEV-EMPRESA-2', 'ativo' => true,
+        ]);
+
+        $admin = User::factory()->create(['empresa_id' => 1]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
+        Sanctum::actingAs($admin, ['*']);
+
+        $this->getJson('/api/v1/esp32/dispositivos/DEV-EMPRESA-2')->assertStatus(200);
     }
 }

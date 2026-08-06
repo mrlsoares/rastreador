@@ -45,7 +45,7 @@ class TelemetryApiController extends Controller
         $dataInicio = $request->date('data_inicio', null, 'America/Sao_Paulo')->setTimezone('UTC');
         $dataFim = $request->date('data_fim', null, 'America/Sao_Paulo')->endOfDay()->setTimezone('UTC');
 
-        $rastreador = Rastreador::where('imei', $imei)->firstOrFail();
+        $rastreador = Rastreador::daEmpresaDoUsuario($request->user())->where('imei', $imei)->firstOrFail();
 
         $posicoes = Posicao::where('rastreador_id', $rastreador->id)
             ->whereBetween('data_hora', [$dataInicio, $dataFim])
@@ -105,7 +105,7 @@ class TelemetryApiController extends Controller
 
         $limit = (int) $request->query('qtde_registros', 50);
 
-        $rastreador = Rastreador::where('imei', $imei)->firstOrFail();
+        $rastreador = Rastreador::daEmpresaDoUsuario($request->user())->where('imei', $imei)->firstOrFail();
 
         $posicoes = Posicao::where('rastreador_id', $rastreador->id)
             ->orderBy('data_hora', 'desc')

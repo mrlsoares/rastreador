@@ -96,9 +96,9 @@ class Esp32TelemetryController extends Controller
         tags: ['ESP32']
     )]
     #[OA\Response(response: 200, description: 'Lista de dispositivos ativos com última telemetria')]
-    public function fleet(): JsonResponse
+    public function fleet(Request $request): JsonResponse
     {
-        $fleet = $this->telemetryService->getActiveFleet();
+        $fleet = $this->telemetryService->getActiveFleet($request->user());
         return response()->json(['success' => true, 'data' => $fleet]);
     }
 
@@ -126,7 +126,9 @@ class Esp32TelemetryController extends Controller
             'por_pagina'  => 'nullable|integer|min:1|max:500',
         ]);
 
-        $dispositivo = Esp32Dispositivo::where('identificador', $identificador)->firstOrFail();
+        $dispositivo = Esp32Dispositivo::daEmpresaDoUsuario($request->user())
+            ->where('identificador', $identificador)
+            ->firstOrFail();
 
         $dataInicio = $request->date('data_inicio', null, 'America/Sao_Paulo')->setTimezone('UTC');
         $dataFim = $request->date('data_fim', null, 'America/Sao_Paulo')->endOfDay()->setTimezone('UTC');
@@ -160,9 +162,10 @@ class Esp32TelemetryController extends Controller
     #[OA\Parameter(name: 'identificador', description: 'MAC Address ou ID do dispositivo', in: 'path', required: true, schema: new OA\Schema(type: 'string'))]
     #[OA\Response(response: 200, description: 'Última telemetria do dispositivo')]
     #[OA\Response(response: 404, description: 'Dispositivo ou telemetria não encontrado')]
-    public function ultima(string $identificador): JsonResponse
+    public function ultima(Request $request, string $identificador): JsonResponse
     {
-        $dispositivo = Esp32Dispositivo::where('identificador', $identificador)
+        $dispositivo = Esp32Dispositivo::daEmpresaDoUsuario($request->user())
+            ->where('identificador', $identificador)
             ->with('ultimaTelemetria')
             ->firstOrFail();
 

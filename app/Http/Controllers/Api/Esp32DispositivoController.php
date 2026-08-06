@@ -25,7 +25,7 @@ class Esp32DispositivoController extends Controller
     #[OA\Response(response: 200, description: 'Lista paginada de dispositivos')]
     public function index(Request $request): JsonResponse
     {
-        $query = Esp32Dispositivo::with('ultimaTelemetria');
+        $query = Esp32Dispositivo::daEmpresaDoUsuario($request->user())->with('ultimaTelemetria');
 
         if ($request->has('ativo')) {
             $query->where('ativo', (bool) $request->ativo);
@@ -72,6 +72,7 @@ class Esp32DispositivoController extends Controller
         ]);
 
         $dispositivo = Esp32Dispositivo::create([
+            'empresa_id'    => $request->user()->empresa_id,
             'identificador' => $request->identificador,
             'nome'          => $request->nome,
             'descricao'     => $request->descricao,
@@ -97,9 +98,10 @@ class Esp32DispositivoController extends Controller
     #[OA\Parameter(name: 'identificador', description: 'MAC Address ou ID do dispositivo', in: 'path', required: true, schema: new OA\Schema(type: 'string'))]
     #[OA\Response(response: 200, description: 'Detalhes do dispositivo com última telemetria')]
     #[OA\Response(response: 404, description: 'Dispositivo não encontrado')]
-    public function show(string $identificador): JsonResponse
+    public function show(Request $request, string $identificador): JsonResponse
     {
-        $dispositivo = Esp32Dispositivo::where('identificador', $identificador)
+        $dispositivo = Esp32Dispositivo::daEmpresaDoUsuario($request->user())
+            ->where('identificador', $identificador)
             ->with('ultimaTelemetria')
             ->firstOrFail();
 
@@ -130,7 +132,9 @@ class Esp32DispositivoController extends Controller
     #[OA\Response(response: 404, description: 'Dispositivo não encontrado')]
     public function update(Request $request, string $identificador): JsonResponse
     {
-        $dispositivo = Esp32Dispositivo::where('identificador', $identificador)->firstOrFail();
+        $dispositivo = Esp32Dispositivo::daEmpresaDoUsuario($request->user())
+            ->where('identificador', $identificador)
+            ->firstOrFail();
 
         $request->validate([
             'nome'      => 'nullable|string|max:100',
@@ -159,9 +163,11 @@ class Esp32DispositivoController extends Controller
     #[OA\Parameter(name: 'identificador', description: 'MAC Address ou ID do dispositivo', in: 'path', required: true, schema: new OA\Schema(type: 'string'))]
     #[OA\Response(response: 200, description: 'Dispositivo removido com sucesso')]
     #[OA\Response(response: 404, description: 'Dispositivo não encontrado')]
-    public function destroy(string $identificador): JsonResponse
+    public function destroy(Request $request, string $identificador): JsonResponse
     {
-        $dispositivo = Esp32Dispositivo::where('identificador', $identificador)->firstOrFail();
+        $dispositivo = Esp32Dispositivo::daEmpresaDoUsuario($request->user())
+            ->where('identificador', $identificador)
+            ->firstOrFail();
         $dispositivo->delete(); // Cascade remove as telemetrias (ver migration)
 
         return response()->json([

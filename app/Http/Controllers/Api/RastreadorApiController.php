@@ -8,19 +8,20 @@ use Illuminate\Http\Request;
 
 class RastreadorApiController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         return response()->json(
-            Rastreador::ativos()
+            Rastreador::daEmpresaDoUsuario($request->user())
+                ->ativos()
                 ->with('ultimaPosicao')
                 ->orderBy('nome')
                 ->get()
         );
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $rastreador = Rastreador::findOrFail($id);
+        $rastreador = Rastreador::daEmpresaDoUsuario($request->user())->findOrFail($id);
         return response()->json($rastreador);
     }
 
@@ -34,13 +35,15 @@ class RastreadorApiController extends Controller
             'descricao'      => 'nullable|string',
         ]);
 
+        $dados['empresa_id'] = $request->user()->empresa_id;
+
         $rastreador = Rastreador::create($dados);
         return response()->json($rastreador, 201);
     }
 
     public function update(Request $request, $id)
     {
-        $rastreador = Rastreador::findOrFail($id);
+        $rastreador = Rastreador::daEmpresaDoUsuario($request->user())->findOrFail($id);
 
         $dados = $request->validate([
             'nome'           => 'sometimes|string|max:100',

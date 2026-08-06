@@ -13,6 +13,7 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
+            'empresa_id' => 1,
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),

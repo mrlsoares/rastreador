@@ -9,6 +9,7 @@ class RastreadorFactory extends Factory
     public function definition(): array
     {
         return [
+            'empresa_id' => 1,
             'imei' => fake()->unique()->numerify('86802203#######'),
             'nome' => 'Caminhão ' . fake()->word(),
             'placa' => fake()->bothify('???-####'),

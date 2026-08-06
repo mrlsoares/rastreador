@@ -27,6 +27,7 @@ class Esp32TelemetryService
             $dispositivo = Esp32Dispositivo::firstOrCreate(
                 ['identificador' => $data['identificador']],
                 [
+                    'empresa_id' => config('telemetria.default_empresa_id'),
                     'nome' => $data['nome'] ?? 'ESP32-' . substr($data['identificador'], -4),
                     'ativo' => true
                 ]
@@ -56,9 +57,10 @@ class Esp32TelemetryService
     /**
      * Retorna a lista de dispositivos com sua última telemetria válida.
      */
-    public function getActiveFleet()
+    public function getActiveFleet(?\App\Models\User $user = null)
     {
-        return Esp32Dispositivo::with('ultimaTelemetria')
+        return Esp32Dispositivo::daEmpresaDoUsuario($user)
+            ->with('ultimaTelemetria')
             ->where('ativo', true)
             ->get();
     }
