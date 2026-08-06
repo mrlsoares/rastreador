@@ -72,10 +72,15 @@ class Esp32TelemetryController extends Controller
                 'message' => 'Telemetria processada com sucesso',
                 'data'    => $telemetria->load('dispositivo'),
             ], 201);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('[Esp32Telemetry] Falha ao processar telemetria', [
+                'erro'          => $e->getMessage(),
+                'identificador' => $request->input('identificador'),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao processar telemetria: ' . $e->getMessage(),
+                'message' => 'Erro interno ao processar telemetria.',
             ], 500);
         }
     }
