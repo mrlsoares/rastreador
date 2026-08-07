@@ -1,6 +1,8 @@
 # Rastreador GPS TRX-16 (Laravel)
 
-Este repositório contém o sistema de rastreamento com um ouvinte TCP (socket) em PHP para dispositivos GPS da família TRX-16 (via Arqia/Datora).
+Este repositório contém o sistema de rastreamento com um ouvinte TCP (socket) em PHP para dispositivos GPS da família TRX-16 (via Arqia/Datora), além de um **sub-sistema de telemetria ESP32** que ingere dados por HTTP com autenticação por **token de dispositivo** (`X-DEVICE-TOKEN`).
+
+> **ESP32:** o fluxo completo (cadastro → token → ingestão → provisionamento BLE) está documentado na seção **[ESP32 — Sub-sistema de Telemetria](#esp32--sub-sistema-de-telemetria)** ao final deste README.
 
 Abaixo estão os comandos resumidos para deploy e configuração em uma **VPS Linux CentOS** (CentOS 7, 8, 9 ou AlmaLinux/Rocky Linux).
 
@@ -380,3 +382,77 @@ curl -s -o /dev/null -w "%{http_code}" https://seu_dominio/vendor/swagger-api/sw
 ```
 
 > **⚠️ Atenção pós-update:** Sempre que o `composer update` atualizar o `swagger-api/swagger-ui`, repita o **Passo 2** para sincronizar os novos arquivos na `public/vendor/`.
+
+---
+
+## ESP32 — Sub-sistema de Telemetria
+
+Além dos rastreadores TRX-16 (socket TCP), o sistema recebe telemetria de dispositivos **ESP32** por HTTP. Diferente do TRX, cada ESP32 se autentica com um **token próprio** (não há chave global de ingestão): o token é gerado no cadastro do dispositivo, entregue **uma única vez**, e enviado em todo POST no header `X-DEVICE-TOKEN`. O dispositivo herda a **empresa** do token — o payload nunca escolhe empresa.
+
+### Modelo de segurança
+
+- **Ingestão** (`POST /api/v1/esp32/telemetry`): header `X-DEVICE-TOKEN`, middleware `device_token`. Sem token, token inválido ou dispositivo inativo → **401**.
+- **Leitura / CRUD** (frota, histórico, cadastro): `auth:sanctum` (Bearer). Escopo multi-tenant por `empresa_id` — usuário só vê dispositivos da própria empresa; `super-admin` vê todas.
+- O token é guardado no banco como **hash SHA-256** (coluna `api_token`), com `token_last4` para exibição. O valor em claro só aparece na resposta do cadastro/regeneração.
+
+### Fluxo de provisionamento
+
+```
+1. App (autenticado)  ──POST /esp32/dispositivos {identificador: MAC}──▶  backend
+2. backend  ──201 { device_token: "<claro, 1x>" }──▶  app
+3. app  ──BLE──▶  ESP32 grava o token em Preferences (NVS)
+4. ESP32  ──POST /esp32/telemetry  (header X-DEVICE-TOKEN)──▶  backend  (201)
+```
+
+### Endpoints
+
+| Método | Rota | Auth | Descrição |
+|--------|------|------|-----------|
+| `POST` | `/api/v1/esp32/telemetry` | `X-DEVICE-TOKEN` | Ingestão de telemetria (o ESP32 envia) |
+| `GET`  | `/api/v1/esp32/fleet` | Bearer | Snapshot da frota (mapa) |
+| `GET`  | `/api/v1/esp32/{identificador}/ultima` | Bearer | Última posição do dispositivo |
+| `GET`  | `/api/v1/esp32/{identificador}/historico` | Bearer | Histórico |
+| `GET`  | `/api/v1/esp32/dispositivos` | Bearer | Lista dispositivos da empresa |
+| `POST` | `/api/v1/esp32/dispositivos` | Bearer | Cadastra dispositivo → **retorna `device_token` (1x)** |
+| `GET`  | `/api/v1/esp32/dispositivos/{identificador}` | Bearer | Detalhe |
+| `PUT`  | `/api/v1/esp32/dispositivos/{identificador}` | Bearer | Atualiza |
+| `DELETE` | `/api/v1/esp32/dispositivos/{identificador}` | Bearer | Remove |
+| `POST` | `/api/v1/esp32/dispositivos/{identificador}/regenerar-token` | Bearer | Gera novo token (invalida o anterior) |
+
+### Payload da ingestão
+
+`POST /api/v1/esp32/telemetry` — todos os campos são opcionais (validados):
+
+```json
+{
+  "lat": -23.5505,
+  "lon": -46.6333,
+  "bateria": 87,
+  "temp": 31.2,
+  "vel": 0,
+  "timestamp": "2026-08-07T12:00:00-03:00",
+  "extra": { "rssi": -71 }
+}
+```
+
+Exemplo com `curl`:
+
+```bash
+curl -X POST https://seu_dominio/api/v1/esp32/telemetry \
+  -H "Content-Type: application/json" \
+  -H "X-DEVICE-TOKEN: <token_do_dispositivo>" \
+  -d '{"lat":-23.5505,"lon":-46.6333,"bateria":87}'
+```
+
+### Migrações relevantes
+
+- `create_esp32_tables` — dispositivos + telemetria (série temporal, `payload_extra` JSON).
+- `add_empresa_id_to_esp32_dispositivos_table` — vínculo multi-tenant.
+- `add_api_token_to_esp32_dispositivos_table` — colunas `api_token` (hash, único) e `token_last4`.
+
+### Firmware e app
+
+- **Firmware** (`modem.ino`, T-SIM7080G): recebe o token via BLE (armazenado em `Preferences`/NVS) e envia o header `X-DEVICE-TOKEN` no POST de telemetria; trata resposta `401` (token ausente/revogado).
+- **App** (`rastreador_ble`, Ionic + Capacitor BLE): autentica no backend, cadastra o dispositivo (recebe o `device_token`) e o provisiona no ESP32 via BLE.
+
+> **Dispositivo pré-existente:** ESP32 cadastrado antes da introdução do token não possui `api_token`. Use **regenerar-token** e reprovisione via BLE para voltar a ingerir.
