@@ -44,6 +44,7 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'ce9671a430e4846b44e1c68c7611f9f5' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery.php',
         'a1cfe24d14977df6878b9bf804af2d1c' => __DIR__ . '/..' . '/nunomaduro/collision/src/Adapters/Phpunit/Autoload.php',
         'ec07570ca5a812141189b1fa81503674' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/Assert/Functions.php',
+        '377b22b161c09ed6e5152de788ca020a' => __DIR__ . '/..' . '/spatie/laravel-permission/src/helpers.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -95,6 +96,7 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
             'Symfony\\Component\\CssSelector\\' => 30,
             'Symfony\\Component\\Console\\' => 26,
             'Symfony\\Component\\Clock\\' => 24,
+            'Spatie\\Permission\\' => 18,
         ),
         'R' =>
         array (
@@ -154,6 +156,7 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
             'Laravel\\Sail\\' => 13,
             'Laravel\\Reverb\\' => 15,
             'Laravel\\Prompts\\' => 16,
+            'Laravel\\Breeze\\' => 15,
             'L5Swagger\\' => 10,
         ),
         'I' =>
@@ -357,6 +360,10 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         array (
             0 => __DIR__ . '/..' . '/symfony/clock',
         ),
+        'Spatie\\Permission\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/spatie/laravel-permission/src',
+        ),
         'React\\Stream\\' =>
         array (
             0 => __DIR__ . '/..' . '/react/stream/src',
@@ -524,6 +531,10 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         array (
             0 => __DIR__ . '/..' . '/laravel/prompts/src',
         ),
+        'Laravel\\Breeze\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/laravel/breeze/src',
+        ),
         'L5Swagger\\' =>
         array (
             0 => __DIR__ . '/..' . '/darkaonline/l5-swagger/src',
@@ -640,6 +651,7 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'App\\Console\\Commands\\WorkermanListen' => __DIR__ . '/../..' . '/app/Console/Commands/WorkermanListen.php',
         'App\\Events\\Esp32TelemetryReceived' => __DIR__ . '/../..' . '/app/Events/Esp32TelemetryReceived.php',
         'App\\Events\\SosStatusChanged' => __DIR__ . '/../..' . '/app/Events/SosStatusChanged.php',
+        'App\\Http\\Controllers\\Api\\AuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/AuthController.php',
         'App\\Http\\Controllers\\Api\\Esp32DispositivoController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/Esp32DispositivoController.php',
         'App\\Http\\Controllers\\Api\\Esp32TelemetryController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/Esp32TelemetryController.php',
         'App\\Http\\Controllers\\Api\\PosicaoApiController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/PosicaoApiController.php',
@@ -650,7 +662,9 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'App\\Http\\Controllers\\PosicaoController' => __DIR__ . '/../..' . '/app/Http/Controllers/PosicaoController.php',
         'App\\Http\\Controllers\\RastreadorController' => __DIR__ . '/../..' . '/app/Http/Controllers/RastreadorController.php',
         'App\\Http\\Middleware\\CheckApiKey' => __DIR__ . '/../..' . '/app/Http/Middleware/CheckApiKey.php',
+        'App\\Http\\Middleware\\DeviceToken' => __DIR__ . '/../..' . '/app/Http/Middleware/DeviceToken.php',
         'App\\Http\\Requests\\TelemetriaStoreRequest' => __DIR__ . '/../..' . '/app/Http/Requests/TelemetriaStoreRequest.php',
+        'App\\Models\\Empresa' => __DIR__ . '/../..' . '/app/Models/Empresa.php',
         'App\\Models\\Esp32Dispositivo' => __DIR__ . '/../..' . '/app/Models/Esp32Dispositivo.php',
         'App\\Models\\Esp32Telemetria' => __DIR__ . '/../..' . '/app/Models/Esp32Telemetria.php',
         'App\\Models\\Evento' => __DIR__ . '/../..' . '/app/Models/Evento.php',
@@ -816,6 +830,8 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'Database\\Factories\\RastreadorFactory' => __DIR__ . '/../..' . '/database/factories/RastreadorFactory.php',
         'Database\\Factories\\UserFactory' => __DIR__ . '/../..' . '/database/factories/UserFactory.php',
         'Database\\Seeders\\DatabaseSeeder' => __DIR__ . '/../..' . '/database/seeders/DatabaseSeeder.php',
+        'Database\\Seeders\\RolesEUsuarioAdminSeeder' => __DIR__ . '/../..' . '/database/seeders/RolesEUsuarioAdminSeeder.php',
+        'Database\\Seeders\\SetupInicialSeeder' => __DIR__ . '/../..' . '/database/seeders/SetupInicialSeeder.php',
         'Database\\Seeders\\TelemetrySeeder' => __DIR__ . '/../..' . '/database/seeders/TelemetrySeeder.php',
         'DateError' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateError.php',
         'DateException' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateException.php',
@@ -3059,6 +3075,12 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'L5Swagger\\L5SwaggerFacade' => __DIR__ . '/..' . '/darkaonline/l5-swagger/src/L5SwaggerFacade.php',
         'L5Swagger\\L5SwaggerServiceProvider' => __DIR__ . '/..' . '/darkaonline/l5-swagger/src/L5SwaggerServiceProvider.php',
         'L5Swagger\\SecurityDefinitions' => __DIR__ . '/..' . '/darkaonline/l5-swagger/src/SecurityDefinitions.php',
+        'Laravel\\Breeze\\BreezeServiceProvider' => __DIR__ . '/..' . '/laravel/breeze/src/BreezeServiceProvider.php',
+        'Laravel\\Breeze\\Console\\InstallCommand' => __DIR__ . '/..' . '/laravel/breeze/src/Console/InstallCommand.php',
+        'Laravel\\Breeze\\Console\\InstallsApiStack' => __DIR__ . '/..' . '/laravel/breeze/src/Console/InstallsApiStack.php',
+        'Laravel\\Breeze\\Console\\InstallsBladeStack' => __DIR__ . '/..' . '/laravel/breeze/src/Console/InstallsBladeStack.php',
+        'Laravel\\Breeze\\Console\\InstallsInertiaStacks' => __DIR__ . '/..' . '/laravel/breeze/src/Console/InstallsInertiaStacks.php',
+        'Laravel\\Breeze\\Console\\InstallsLivewireStack' => __DIR__ . '/..' . '/laravel/breeze/src/Console/InstallsLivewireStack.php',
         'Laravel\\Prompts\\Clear' => __DIR__ . '/..' . '/laravel/prompts/src/Clear.php',
         'Laravel\\Prompts\\Concerns\\Colors' => __DIR__ . '/..' . '/laravel/prompts/src/Concerns/Colors.php',
         'Laravel\\Prompts\\Concerns\\Cursor' => __DIR__ . '/..' . '/laravel/prompts/src/Concerns/Cursor.php',
@@ -6336,6 +6358,42 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'SebastianBergmann\\Type\\UnknownType' => __DIR__ . '/..' . '/sebastian/type/src/type/UnknownType.php',
         'SebastianBergmann\\Type\\VoidType' => __DIR__ . '/..' . '/sebastian/type/src/type/VoidType.php',
         'SebastianBergmann\\Version' => __DIR__ . '/..' . '/sebastian/version/src/Version.php',
+        'Spatie\\Permission\\Commands\\AssignRole' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Commands/AssignRole.php',
+        'Spatie\\Permission\\Commands\\CacheReset' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Commands/CacheReset.php',
+        'Spatie\\Permission\\Commands\\CreatePermission' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Commands/CreatePermission.php',
+        'Spatie\\Permission\\Commands\\CreateRole' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Commands/CreateRole.php',
+        'Spatie\\Permission\\Commands\\Show' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Commands/Show.php',
+        'Spatie\\Permission\\Commands\\UpgradeForTeams' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Commands/UpgradeForTeams.php',
+        'Spatie\\Permission\\Contracts\\Permission' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Contracts/Permission.php',
+        'Spatie\\Permission\\Contracts\\PermissionsTeamResolver' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Contracts/PermissionsTeamResolver.php',
+        'Spatie\\Permission\\Contracts\\Role' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Contracts/Role.php',
+        'Spatie\\Permission\\Contracts\\Wildcard' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Contracts/Wildcard.php',
+        'Spatie\\Permission\\DefaultTeamResolver' => __DIR__ . '/..' . '/spatie/laravel-permission/src/DefaultTeamResolver.php',
+        'Spatie\\Permission\\Events\\PermissionAttached' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Events/PermissionAttached.php',
+        'Spatie\\Permission\\Events\\PermissionDetached' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Events/PermissionDetached.php',
+        'Spatie\\Permission\\Events\\RoleAttached' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Events/RoleAttached.php',
+        'Spatie\\Permission\\Events\\RoleDetached' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Events/RoleDetached.php',
+        'Spatie\\Permission\\Exceptions\\GuardDoesNotMatch' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Exceptions/GuardDoesNotMatch.php',
+        'Spatie\\Permission\\Exceptions\\PermissionAlreadyExists' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Exceptions/PermissionAlreadyExists.php',
+        'Spatie\\Permission\\Exceptions\\PermissionDoesNotExist' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Exceptions/PermissionDoesNotExist.php',
+        'Spatie\\Permission\\Exceptions\\RoleAlreadyExists' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Exceptions/RoleAlreadyExists.php',
+        'Spatie\\Permission\\Exceptions\\RoleDoesNotExist' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Exceptions/RoleDoesNotExist.php',
+        'Spatie\\Permission\\Exceptions\\UnauthorizedException' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Exceptions/UnauthorizedException.php',
+        'Spatie\\Permission\\Exceptions\\WildcardPermissionInvalidArgument' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Exceptions/WildcardPermissionInvalidArgument.php',
+        'Spatie\\Permission\\Exceptions\\WildcardPermissionNotImplementsContract' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Exceptions/WildcardPermissionNotImplementsContract.php',
+        'Spatie\\Permission\\Exceptions\\WildcardPermissionNotProperlyFormatted' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Exceptions/WildcardPermissionNotProperlyFormatted.php',
+        'Spatie\\Permission\\Guard' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Guard.php',
+        'Spatie\\Permission\\Middleware\\PermissionMiddleware' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Middleware/PermissionMiddleware.php',
+        'Spatie\\Permission\\Middleware\\RoleMiddleware' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Middleware/RoleMiddleware.php',
+        'Spatie\\Permission\\Middleware\\RoleOrPermissionMiddleware' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Middleware/RoleOrPermissionMiddleware.php',
+        'Spatie\\Permission\\Models\\Permission' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Models/Permission.php',
+        'Spatie\\Permission\\Models\\Role' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Models/Role.php',
+        'Spatie\\Permission\\PermissionRegistrar' => __DIR__ . '/..' . '/spatie/laravel-permission/src/PermissionRegistrar.php',
+        'Spatie\\Permission\\PermissionServiceProvider' => __DIR__ . '/..' . '/spatie/laravel-permission/src/PermissionServiceProvider.php',
+        'Spatie\\Permission\\Traits\\HasPermissions' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Traits/HasPermissions.php',
+        'Spatie\\Permission\\Traits\\HasRoles' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Traits/HasRoles.php',
+        'Spatie\\Permission\\Traits\\RefreshesPermissionCache' => __DIR__ . '/..' . '/spatie/laravel-permission/src/Traits/RefreshesPermissionCache.php',
+        'Spatie\\Permission\\WildcardPermission' => __DIR__ . '/..' . '/spatie/laravel-permission/src/WildcardPermission.php',
         'Stringable' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Stringable.php',
         'Symfony\\Component\\Clock\\Clock' => __DIR__ . '/..' . '/symfony/clock/Clock.php',
         'Symfony\\Component\\Clock\\ClockAwareTrait' => __DIR__ . '/..' . '/symfony/clock/ClockAwareTrait.php',
@@ -7418,6 +7476,7 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'Termwind\\ValueObjects\\Node' => __DIR__ . '/..' . '/nunomaduro/termwind/src/ValueObjects/Node.php',
         'Termwind\\ValueObjects\\Style' => __DIR__ . '/..' . '/nunomaduro/termwind/src/ValueObjects/Style.php',
         'Termwind\\ValueObjects\\Styles' => __DIR__ . '/..' . '/nunomaduro/termwind/src/ValueObjects/Styles.php',
+        'Tests\\Feature\\ApiSecurityTest' => __DIR__ . '/../..' . '/tests/Feature/ApiSecurityTest.php',
         'Tests\\Feature\\TelemetryApiTest' => __DIR__ . '/../..' . '/tests/Feature/TelemetryApiTest.php',
         'Tests\\TestCase' => __DIR__ . '/../..' . '/tests/TestCase.php',
         'TheSeer\\Tokenizer\\Exception' => __DIR__ . '/..' . '/theseer/tokenizer/src/Exception.php',
