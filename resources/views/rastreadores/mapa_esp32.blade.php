@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.rastreador')
 
 @section('content')
 <div class="row page-header">
