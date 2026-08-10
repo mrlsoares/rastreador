@@ -336,6 +336,30 @@
         <a href="{{ route('rastreadores.index') }}" class="nav-item {{ request()->routeIs('rastreadores.*')      ? 'active' : '' }}">
             <i class="fas fa-truck"></i> Rastreadores
         </a>
+
+        @hasanyrole('super-admin|admin-empresa')
+        <a href="{{ route('usuarios.index') }}"  class="nav-item {{ request()->routeIs('usuarios.*')             ? 'active' : '' }}">
+            <i class="fas fa-users"></i> Usuários
+        </a>
+        @endhasanyrole
+
+        @role('super-admin')
+        <a href="{{ route('empresas.index') }}"  class="nav-item {{ request()->routeIs('empresas.*')             ? 'active' : '' }}">
+            <i class="fas fa-building"></i> Empresas
+        </a>
+        @endrole
+
+        <a href="{{ route('profile.edit') }}"    class="nav-item {{ request()->routeIs('profile.*')              ? 'active' : '' }}">
+            <i class="fas fa-user-gear"></i> Perfil
+        </a>
+
+        <form method="POST" action="{{ route('logout') }}" style="margin-top:auto">
+            @csrf
+            <a href="{{ route('logout') }}" class="nav-item"
+               onclick="event.preventDefault(); this.closest('form').submit();">
+                <i class="fas fa-right-from-bracket"></i> Sair
+            </a>
+        </form>
     </aside>
 
     <!-- Main Content -->
