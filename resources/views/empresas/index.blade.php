@@ -13,7 +13,7 @@
         </div>
 
         <div class="bg-white dark:bg-gray-800 shadow rounded overflow-x-auto">
-            <table class="min-w-full text-sm text-left">
+            <table class="min-w-full text-sm text-left text-gray-800 dark:text-gray-200">
                 <thead class="border-b dark:border-gray-700">
                     <tr>
                         <th class="p-3">#</th>
