@@ -12,7 +12,7 @@
         @endif
 
         <div class="mb-4">
-            <a href="{{ route('usuarios.create') }}" class="inline-flex items-center px-4 py-2 bg-gray-800 text-white rounded">Novo usuário</a>
+            <a href="{{ route('usuarios.create') }}" class="inline-flex items-center px-4 py-2 bg-[#2468f2] hover:bg-[#1d5ce0] text-white rounded shadow-sm">Novo usuário</a>
         </div>
 
         <div class="bg-white dark:bg-gray-800 shadow rounded overflow-x-auto">

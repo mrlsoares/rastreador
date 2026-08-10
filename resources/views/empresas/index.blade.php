@@ -9,7 +9,7 @@
         @endif
 
         <div class="mb-4">
-            <a href="{{ route('empresas.create') }}" class="inline-flex items-center px-4 py-2 bg-gray-800 text-white rounded">Nova empresa</a>
+            <a href="{{ route('empresas.create') }}" class="inline-flex items-center px-4 py-2 bg-[#2468f2] hover:bg-[#1d5ce0] text-white rounded shadow-sm">Nova empresa</a>
         </div>
 
         <div class="bg-white dark:bg-gray-800 shadow rounded overflow-x-auto">
