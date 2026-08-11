@@ -69,10 +69,18 @@ class Esp32DispositivoController extends Controller
             'nome'          => 'nullable|string|max:100',
             'descricao'     => 'nullable|string',
             'ativo'         => 'nullable|boolean',
+            'empresa_id'    => 'nullable|integer|exists:empresas,id',
         ]);
 
+        // super-admin pode escolher a empresa do dispositivo; demais usuários
+        // ficam presos à própria empresa (ignora empresa_id enviado).
+        $ator = $request->user();
+        $empresaId = $ator->hasRole('super-admin')
+            ? ($request->empresa_id ?? $ator->empresa_id)
+            : $ator->empresa_id;
+
         $dispositivo = Esp32Dispositivo::create([
-            'empresa_id'    => $request->user()->empresa_id,
+            'empresa_id'    => $empresaId,
             'identificador' => $request->identificador,
             'nome'          => $request->nome,
             'descricao'     => $request->descricao,

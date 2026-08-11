@@ -48,6 +48,9 @@ Route::prefix('v1')->group(function () {
 
         Route::post('/logout', [AuthController::class, 'logout']);
 
+        // --- Empresas (seleção no cadastro de dispositivos) ---
+        Route::get('/empresas', [\App\Http\Controllers\Api\EmpresaController::class, 'index']);
+
         // --- Rastreadores TRX-16 ---
         Route::get('/rastreadores',       [RastreadorApiController::class, 'index']);
         Route::post('/rastreadores',      [RastreadorApiController::class, 'store']);
