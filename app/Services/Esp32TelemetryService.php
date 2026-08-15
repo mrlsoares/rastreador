@@ -27,7 +27,11 @@ class Esp32TelemetryService
         $dataHoraDispositivo = now();
         if (isset($data['timestamp'])) {
             try {
-                $dataHoraDispositivo = Carbon::parse($data['timestamp']);
+                // Normaliza para o fuso do app antes de persistir. Sem isto, o
+                // offset "-03:00" do device era gravado como wall-clock e relido
+                // como UTC, deslocando o horário em 3h (data_hora ficava -3h).
+                $dataHoraDispositivo = Carbon::parse($data['timestamp'])
+                    ->setTimezone(config('app.timezone'));
             } catch (\Throwable $e) {
                 $dataHoraDispositivo = now();
             }
