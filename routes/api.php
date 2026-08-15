@@ -41,6 +41,12 @@ Route::prefix('v1')->group(function () {
         Route::post('/esp32/telemetry', [Esp32TelemetryController::class, 'store']);
     });
 
+    // Auto-provisionamento ESP32: o dispositivo obtém seu token de ingestão
+    // usando a chave de bootstrap (X-API-KEY). Deve estar pré-cadastrado.
+    Route::middleware(['api_key', 'throttle:ingest'])->group(function () {
+        Route::post('/esp32/provision', [Esp32DispositivoController::class, 'provision']);
+    });
+
     // -------------------------------------------------------------------------
     // Rotas autenticadas (token Bearer / Sanctum)
     // -------------------------------------------------------------------------

@@ -214,4 +214,75 @@ class Esp32DispositivoController extends Controller
             'device_token' => $token,
         ]);
     }
+
+    // =========================================================================
+    // POST /api/v1/esp32/provision  (máquina-a-máquina — X-API-KEY)
+    // =========================================================================
+    // Permite ao próprio ESP32 obter seu token de ingestão automaticamente,
+    // sem depender do provisionamento por BLE. O dispositivo deve estar
+    // pré-cadastrado (por um admin) e ativo. Como o token é guardado só como
+    // hash, cada chamada gera um token NOVO (revoga o anterior) e o devolve em
+    // claro uma única vez — o firmware persiste na NVS e só chama de novo se
+    // não tiver token salvo.
+
+    #[OA\Post(
+        path: '/api/v1/esp32/provision',
+        summary: 'Auto-provisionamento: o dispositivo obtém seu token de ingestão',
+        description: 'Máquina-a-máquina. Autenticado pela chave de bootstrap (X-API-KEY). '
+            . 'O dispositivo precisa estar pré-cadastrado e ativo. Gera e devolve um token '
+            . 'novo (revoga o anterior), exibido uma única vez.',
+        security: [['apiKeyAuth' => []]],
+        tags: ['ESP32 - Dispositivos']
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['identificador'],
+            properties: [
+                new OA\Property(property: 'identificador', type: 'string', example: 'AA:BB:CC:DD:EE:FF'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: 'Token provisionado (exibido uma única vez)', content: new OA\JsonContent(
+        properties: [
+            new OA\Property(property: 'success', type: 'boolean', example: true),
+            new OA\Property(property: 'message', type: 'string', example: 'Token provisionado.'),
+            new OA\Property(property: 'device_token', type: 'string', example: 'aBc123...48chars'),
+        ]
+    ))]
+    #[OA\Response(response: 401, description: 'X-API-KEY ausente ou inválida')]
+    #[OA\Response(response: 403, description: 'Dispositivo inativo')]
+    #[OA\Response(response: 404, description: 'Dispositivo não cadastrado')]
+    #[OA\Response(response: 422, description: 'identificador ausente')]
+    public function provision(Request $request): JsonResponse
+    {
+        $request->validate([
+            'identificador' => 'required|string|max:50',
+        ]);
+
+        // Sem escopo de usuário (chamada máquina-a-máquina via X-API-KEY).
+        $dispositivo = Esp32Dispositivo::where('identificador', $request->identificador)->first();
+
+        if (! $dispositivo) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Dispositivo não cadastrado. Registre-o antes de provisionar.',
+            ], 404);
+        }
+
+        if (! $dispositivo->ativo) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Dispositivo inativo.',
+            ], 403);
+        }
+
+        $token = $dispositivo->gerarTokenApi();
+
+        return response()->json([
+            'success'      => true,
+            'message'      => 'Token provisionado.',
+            'device_token' => $token,
+        ]);
+    }
 }

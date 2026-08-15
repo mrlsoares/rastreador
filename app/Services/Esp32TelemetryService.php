@@ -22,7 +22,7 @@ class Esp32TelemetryService
      */
     public function registrarTelemetria(Esp32Dispositivo $dispositivo, array $data): Esp32Telemetria
     {
-        return DB::transaction(function () use ($dispositivo, $data) {
+        $telemetria = DB::transaction(function () use ($dispositivo, $data) {
             // Registra a telemetria no dispositivo autenticado pelo token.
             $telemetria = $dispositivo->telemetrias()->create([
                 'latitude'      => $data['lat'] ?? null,
@@ -34,14 +34,25 @@ class Esp32TelemetryService
                 'data_hora'     => isset($data['timestamp']) ? Carbon::parse($data['timestamp']) : now(),
             ]);
 
-            // 3. Atualiza o status de último contato do dispositivo
+            // Atualiza o status de último contato do dispositivo
             $dispositivo->update(['ultimo_contato' => now()]);
-
-            // 4. Dispara evento de tempo real
-            broadcast(new Esp32TelemetryReceived($telemetria));
 
             return $telemetria;
         });
+
+        // Broadcast de tempo real é BEST-EFFORT e fica FORA da transação: uma
+        // falha do Reverb (servidor WebSocket offline) não deve reverter a
+        // ingestão já persistida nem retornar 500 ao dispositivo.
+        try {
+            broadcast(new Esp32TelemetryReceived($telemetria));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning(
+                '[Esp32Telemetry] Broadcast falhou (ingestão OK, seguindo)',
+                ['erro' => $e->getMessage()]
+            );
+        }
+
+        return $telemetria;
     }
 
     /**
