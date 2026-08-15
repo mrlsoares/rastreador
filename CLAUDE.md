@@ -67,3 +67,15 @@ Broadcast events (`app/Events/`) implement `ShouldBroadcast` over Reverb. `Esp32
 ## Deployment
 
 Target is a CentOS/AlmaLinux VPS (not the `docker/php` path implies — despite the repo location there is no Dockerfile here). Production runs the listener under **Supervisor** (`deploy/supervisor/rastreador-workerman.ini`) and Reverb + socket under **systemd**. Full step-by-step (PHP 8.2+ via Remi, Nginx, MariaDB, SELinux booleans, firewall port 5023, Swagger asset troubleshooting) is in `README.md` — consult it before changing anything deployment-related.
+
+## Projetos irmãos (mesmo produto — editáveis nesta máquina)
+
+**Você está aqui:** Backend Laravel. É uma das três partes de um mesmo produto (telemetria/rastreador ESP32) e é a **fonte da verdade do contrato de dados**. Ao analisar, corrigir ou adicionar melhorias no fluxo ESP32, considere os outros dois repos.
+
+| Papel | Caminho local | Remote GitHub |
+|-------|---------------|---------------|
+| **Firmware ESP32** (LILYGO T-SIM7080G-S3) | `D:\Projetos\Arduino\Esp32\modem` | `git@github.com:mrlsoares/ESP32-TSIM7080S3.git` |
+| **Backend Laravel 11** (ingestão HTTP + banco + mapa) — *este repo* | `D:\Projetos\docker\php\rastreador` | `git@github.com:mrlsoares/rastreador.git` |
+| **App Android** (Capacitor + Ionic React; config/token via BLE) | `D:\Projetos\node\rastreador_ble` | `git@github.com:mrlsoares/rastreador_ble.git` |
+
+**Contrato compartilhado (fonte da verdade = este backend):** payload JSON de `POST /api/v1/esp32/telemetry` + header `X-DEVICE-TOKEN` + protocolo de comandos BLE (Nordic UART) do firmware. Mudar qualquer campo do payload, regra de auth do token, ou schema `esp32_*` exige ajustar os **três** repos no mesmo ciclo: o firmware monta o JSON e recebe o token via `SETTOKEN:`, este backend ingere/valida, o app provisiona o token e lê a telemetria.
