@@ -22,7 +22,21 @@ class Esp32TelemetryService
      */
     public function registrarTelemetria(Esp32Dispositivo $dispositivo, array $data): Esp32Telemetria
     {
-        $telemetria = DB::transaction(function () use ($dispositivo, $data) {
+        // data_hora = horário REPORTADO pelo dispositivo (pode vir dessincronizado).
+        // Guardado como está para referência; a fonte confiável é recebido_em.
+        $dataHoraDispositivo = now();
+        if (isset($data['timestamp'])) {
+            try {
+                $dataHoraDispositivo = Carbon::parse($data['timestamp']);
+            } catch (\Throwable $e) {
+                $dataHoraDispositivo = now();
+            }
+        }
+
+        // botao_panico promovido de payload_extra->botao_panico para coluna própria.
+        $botaoPanico = (bool) ($data['extra']['botao_panico'] ?? false);
+
+        $telemetria = DB::transaction(function () use ($dispositivo, $data, $dataHoraDispositivo, $botaoPanico) {
             // Registra a telemetria no dispositivo autenticado pelo token.
             $telemetria = $dispositivo->telemetrias()->create([
                 'latitude'      => $data['lat'] ?? null,
@@ -31,7 +45,9 @@ class Esp32TelemetryService
                 'temperatura'   => $data['temp'] ?? null,
                 'velocidade'    => $data['vel'] ?? 0,
                 'payload_extra' => $data['extra'] ?? null,
-                'data_hora'     => isset($data['timestamp']) ? Carbon::parse($data['timestamp']) : now(),
+                'data_hora'     => $dataHoraDispositivo,
+                'recebido_em'   => now(),   // fonte de tempo confiável (servidor)
+                'botao_panico'  => $botaoPanico,
             ]);
 
             // Atualiza o status de último contato do dispositivo

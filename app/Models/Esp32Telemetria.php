@@ -23,6 +23,8 @@ class Esp32Telemetria extends Model
         'velocidade',
         'payload_extra',
         'data_hora',
+        'recebido_em',
+        'botao_panico',
     ];
 
     protected $casts = [
@@ -32,6 +34,8 @@ class Esp32Telemetria extends Model
         'temperatura'   => 'float',
         'payload_extra' => 'array',
         'data_hora'     => 'datetime',
+        'recebido_em'   => 'datetime',
+        'botao_panico'  => 'boolean',
     ];
 
     protected function serializeDate(\DateTimeInterface $date): string
