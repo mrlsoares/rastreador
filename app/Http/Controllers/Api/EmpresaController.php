@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Empresa;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
 /**
  * Lista de empresas para o app (seleção no cadastro de dispositivos).
@@ -13,6 +14,15 @@ use Illuminate\Http\Request;
  */
 class EmpresaController extends Controller
 {
+    #[OA\Get(
+        path: '/api/v1/empresas',
+        summary: 'Lista empresas para seleção no cadastro de dispositivos',
+        description: 'super-admin vê todas as empresas; demais usuários veem apenas a própria.',
+        security: [['bearerAuth' => []]],
+        tags: ['Empresas']
+    )]
+    #[OA\Response(response: 200, description: 'Lista de empresas (id, nome_fantasia, razao_social)')]
+    #[OA\Response(response: 401, description: 'Não autenticado')]
     public function index(Request $request): JsonResponse
     {
         $ator = $request->user();

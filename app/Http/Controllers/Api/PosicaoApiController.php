@@ -6,9 +6,23 @@ use App\Http\Controllers\Controller;
 use App\Models\Posicao;
 use App\Models\Rastreador;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
 class PosicaoApiController extends Controller
 {
+    #[OA\Get(
+        path: '/api/v1/posicoes',
+        summary: 'Lista posições dos rastreadores TRX-16 da empresa',
+        description: 'Paginado, mais recentes primeiro. Filtros opcionais por rastreador e período.',
+        security: [['bearerAuth' => []]],
+        tags: ['Posições TRX']
+    )]
+    #[OA\Parameter(name: 'rastreador_id', description: 'Filtra por rastreador', in: 'query', required: false, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'data_inicio', description: 'Início (Y-m-d H:i:s, America/Sao_Paulo)', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date-time'))]
+    #[OA\Parameter(name: 'data_fim', description: 'Fim (Y-m-d H:i:s, America/Sao_Paulo)', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date-time'))]
+    #[OA\Parameter(name: 'per_page', description: 'Registros por página (padrão 100, máx 500)', in: 'query', required: false, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Posições paginadas')]
+    #[OA\Response(response: 401, description: 'Não autenticado')]
     public function index(Request $request)
     {
         $request->validate([
@@ -43,6 +57,18 @@ class PosicaoApiController extends Controller
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/rastreadores/{id}/posicoes',
+        summary: 'Lista as posições de um rastreador TRX-16 por período',
+        security: [['bearerAuth' => []]],
+        tags: ['Posições TRX']
+    )]
+    #[OA\Parameter(name: 'id', description: 'ID do rastreador', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'data_inicio', description: 'Início (Y-m-d H:i:s)', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date-time'))]
+    #[OA\Parameter(name: 'data_fim', description: 'Fim (Y-m-d H:i:s)', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date-time'))]
+    #[OA\Parameter(name: 'per_page', description: 'Registros por página (padrão 100, máx 500)', in: 'query', required: false, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Posições paginadas do rastreador')]
+    #[OA\Response(response: 404, description: 'Rastreador não encontrado')]
     public function porRastreador(Request $request, $id)
     {
         $rastreador = Rastreador::daEmpresaDoUsuario($request->user())->findOrFail($id);
@@ -69,6 +95,15 @@ class PosicaoApiController extends Controller
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/rastreadores/{id}/ultima-posicao',
+        summary: 'Retorna a última posição de um rastreador TRX-16',
+        security: [['bearerAuth' => []]],
+        tags: ['Posições TRX']
+    )]
+    #[OA\Parameter(name: 'id', description: 'ID do rastreador', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Última posição do rastreador')]
+    #[OA\Response(response: 404, description: 'Rastreador ou posição não encontrado')]
     public function ultimaPosicao(Request $request, $id)
     {
         $rastreador = Rastreador::daEmpresaDoUsuario($request->user())->findOrFail($id);
