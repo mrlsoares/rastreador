@@ -9,18 +9,7 @@ use App\Models\Evento;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
-/**
- * @OA\Info(
- *     title="API de Telemetria GPS",
- *     version="1.0.0",
- *     description="API dedicada à extração e consumo de dados de rastreamento de frotas (Posições e Lógica de Combinação)."
- * )
- * @OA\SecurityScheme(
- *     securityScheme="bearerAuth",
- *     type="http",
- *     scheme="bearer"
- * )
- */
+// Info + SecuritySchemes centralizados em App\SwaggerDef (não duplicar aqui).
 class TelemetryApiController extends Controller
 {
     #[OA\Get(

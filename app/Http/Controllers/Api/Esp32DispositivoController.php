@@ -18,6 +18,7 @@ class Esp32DispositivoController extends Controller
         path: '/api/v1/esp32/dispositivos',
         summary: 'Lista todos os dispositivos ESP32 cadastrados',
         description: 'Retorna a lista paginada de dispositivos com sua última telemetria.',
+        security: [['bearerAuth' => []]],
         tags: ['ESP32 - Dispositivos']
     )]
     #[OA\Parameter(name: 'ativo',      description: 'Filtrar por status (1=ativos, 0=inativos)', in: 'query', required: false, schema: new OA\Schema(type: 'integer', enum: [0, 1]))]
@@ -45,6 +46,7 @@ class Esp32DispositivoController extends Controller
         path: '/api/v1/esp32/dispositivos',
         summary: 'Cadastra um novo dispositivo ESP32 manualmente',
         description: 'Útil para pré-registrar um dispositivo antes de ele enviar o primeiro pacote.',
+        security: [['bearerAuth' => []]],
         tags: ['ESP32 - Dispositivos']
     )]
     #[OA\RequestBody(
@@ -105,6 +107,7 @@ class Esp32DispositivoController extends Controller
     #[OA\Get(
         path: '/api/v1/esp32/dispositivos/{identificador}',
         summary: 'Retorna os detalhes de um dispositivo ESP32',
+        security: [['bearerAuth' => []]],
         tags: ['ESP32 - Dispositivos']
     )]
     #[OA\Parameter(name: 'identificador', description: 'MAC Address ou ID do dispositivo', in: 'path', required: true, schema: new OA\Schema(type: 'string'))]
@@ -127,6 +130,7 @@ class Esp32DispositivoController extends Controller
     #[OA\Put(
         path: '/api/v1/esp32/dispositivos/{identificador}',
         summary: 'Atualiza os dados cadastrais de um dispositivo ESP32',
+        security: [['bearerAuth' => []]],
         tags: ['ESP32 - Dispositivos']
     )]
     #[OA\Parameter(name: 'identificador', description: 'MAC Address ou ID do dispositivo', in: 'path', required: true, schema: new OA\Schema(type: 'string'))]
@@ -170,6 +174,7 @@ class Esp32DispositivoController extends Controller
     #[OA\Delete(
         path: '/api/v1/esp32/dispositivos/{identificador}',
         summary: 'Remove um dispositivo ESP32 e todo o seu histórico de telemetria',
+        security: [['bearerAuth' => []]],
         tags: ['ESP32 - Dispositivos']
     )]
     #[OA\Parameter(name: 'identificador', description: 'MAC Address ou ID do dispositivo', in: 'path', required: true, schema: new OA\Schema(type: 'string'))]
@@ -195,6 +200,7 @@ class Esp32DispositivoController extends Controller
     #[OA\Post(
         path: '/api/v1/esp32/dispositivos/{identificador}/regenerar-token',
         summary: 'Gera um novo token de ingestão para o dispositivo (revoga o anterior)',
+        security: [['bearerAuth' => []]],
         tags: ['ESP32 - Dispositivos']
     )]
     #[OA\Parameter(name: 'identificador', description: 'MAC Address ou ID do dispositivo', in: 'path', required: true, schema: new OA\Schema(type: 'string'))]

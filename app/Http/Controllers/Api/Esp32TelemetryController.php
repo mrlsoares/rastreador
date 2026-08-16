@@ -24,7 +24,11 @@ class Esp32TelemetryController extends Controller
     #[OA\Post(
         path: '/api/v1/esp32/telemetry',
         summary: 'Recebe e processa dados de telemetria de uma placa ESP32',
-        description: 'Endpoint público para ingestão de dados. Cria o dispositivo automaticamente se não existir (firstOrCreate por identificador/MAC).',
+        description: 'Ingestão autenticada por token de dispositivo (header X-DEVICE-TOKEN). '
+            . 'O dispositivo deve estar pré-cadastrado e ativo — não há criação automática. '
+            . 'Token ausente/inválido/revogado ou dispositivo inativo retornam 401. '
+            . 'Provisione o token via /esp32/provision (máquina-a-máquina) ou pelo app.',
+        security: [['deviceToken' => []]],
         tags: ['ESP32']
     )]
     #[OA\RequestBody(
@@ -45,6 +49,7 @@ class Esp32TelemetryController extends Controller
         )
     )]
     #[OA\Response(response: 201, description: 'Telemetria processada com sucesso', content: new OA\JsonContent())]
+    #[OA\Response(response: 401, description: 'X-DEVICE-TOKEN ausente/inválido/revogado ou dispositivo inativo', content: new OA\JsonContent())]
     #[OA\Response(response: 422, description: 'Dados inválidos', content: new OA\JsonContent())]
     #[OA\Response(response: 500, description: 'Erro interno', content: new OA\JsonContent())]
     public function store(Request $request): JsonResponse
@@ -94,6 +99,7 @@ class Esp32TelemetryController extends Controller
         path: '/api/v1/esp32/fleet',
         summary: 'Retorna todos os dispositivos ESP32 ativos com a última telemetria',
         description: 'Snapshot em tempo real da frota de placas ESP32. Ideal para atualizar pins no mapa.',
+        security: [['bearerAuth' => []]],
         tags: ['ESP32']
     )]
     #[OA\Response(response: 200, description: 'Lista de dispositivos ativos com última telemetria')]
@@ -110,6 +116,7 @@ class Esp32TelemetryController extends Controller
     #[OA\Get(
         path: '/api/v1/esp32/{identificador}/historico',
         summary: 'Retorna o histórico de telemetria de um dispositivo ESP32 por período',
+        security: [['bearerAuth' => []]],
         tags: ['ESP32']
     )]
     #[OA\Parameter(name: 'identificador', description: 'MAC Address ou ID do dispositivo', in: 'path', required: true, schema: new OA\Schema(type: 'string'))]
@@ -158,6 +165,7 @@ class Esp32TelemetryController extends Controller
     #[OA\Get(
         path: '/api/v1/esp32/{identificador}/ultima',
         summary: 'Retorna a última telemetria recebida de um dispositivo ESP32',
+        security: [['bearerAuth' => []]],
         tags: ['ESP32']
     )]
     #[OA\Parameter(name: 'identificador', description: 'MAC Address ou ID do dispositivo', in: 'path', required: true, schema: new OA\Schema(type: 'string'))]
