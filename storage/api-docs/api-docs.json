@@ -6,6 +6,91 @@
         "version": "1.0.0"
     },
     "paths": {
+        "/api/v1/login": {
+            "post": {
+                "tags": [
+                    "Autenticação"
+                ],
+                "summary": "Autentica um usuário e emite um token Sanctum (Bearer)",
+                "operationId": "b9b760991d94b179960cd7ddc93eedf2",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "admin@exemplo.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "segredo"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Token emitido"
+                    },
+                    "422": {
+                        "description": "Credenciais inválidas"
+                    }
+                }
+            }
+        },
+        "/api/v1/logout": {
+            "post": {
+                "tags": [
+                    "Autenticação"
+                ],
+                "summary": "Revoga o token atual",
+                "operationId": "b66dd8a7864f561822c01bc8339363fb",
+                "responses": {
+                    "200": {
+                        "description": "Token revogado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/empresas": {
+            "get": {
+                "tags": [
+                    "Empresas"
+                ],
+                "summary": "Lista empresas para seleção no cadastro de dispositivos",
+                "description": "super-admin vê todas as empresas; demais usuários veem apenas a própria.",
+                "operationId": "5e2c3cf386eb46b6bf9e3ce6561c444f",
+                "responses": {
+                    "200": {
+                        "description": "Lista de empresas (id, nome_fantasia, razao_social)"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/esp32/dispositivos": {
             "get": {
                 "tags": [
@@ -42,7 +127,12 @@
                     "200": {
                         "description": "Lista paginada de dispositivos"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "post": {
                 "tags": [
@@ -107,7 +197,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/v1/esp32/dispositivos/{identificador}": {
@@ -135,7 +230,12 @@
                     "404": {
                         "description": "Dispositivo não encontrado"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "put": {
                 "tags": [
@@ -185,7 +285,12 @@
                     "404": {
                         "description": "Dispositivo não encontrado"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "delete": {
                 "tags": [
@@ -211,7 +316,117 @@
                     "404": {
                         "description": "Dispositivo não encontrado"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/esp32/dispositivos/{identificador}/regenerar-token": {
+            "post": {
+                "tags": [
+                    "ESP32 - Dispositivos"
+                ],
+                "summary": "Gera um novo token de ingestão para o dispositivo (revoga o anterior)",
+                "operationId": "0ce595021e8a9d0a98b542ff84aeae52",
+                "parameters": [
+                    {
+                        "name": "identificador",
+                        "in": "path",
+                        "description": "MAC Address ou ID do dispositivo",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Novo token gerado (exibido uma única vez)"
+                    },
+                    "404": {
+                        "description": "Dispositivo não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/esp32/provision": {
+            "post": {
+                "tags": [
+                    "ESP32 - Dispositivos"
+                ],
+                "summary": "Auto-provisionamento: o dispositivo obtém seu token de ingestão",
+                "description": "Máquina-a-máquina. Autenticado pela chave de bootstrap (X-API-KEY). O dispositivo precisa estar pré-cadastrado e ativo. Gera e devolve um token novo (revoga o anterior), exibido uma única vez.",
+                "operationId": "1a8a95c7bae3efd5ca366f875c120319",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "identificador"
+                                ],
+                                "properties": {
+                                    "identificador": {
+                                        "type": "string",
+                                        "example": "AA:BB:CC:DD:EE:FF"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Token provisionado (exibido uma única vez)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Token provisionado."
+                                        },
+                                        "device_token": {
+                                            "type": "string",
+                                            "example": "aBc123...48chars"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "X-API-KEY ausente ou inválida"
+                    },
+                    "403": {
+                        "description": "Dispositivo inativo"
+                    },
+                    "404": {
+                        "description": "Dispositivo não cadastrado"
+                    },
+                    "422": {
+                        "description": "identificador ausente"
+                    }
+                },
+                "security": [
+                    {
+                        "apiKeyAuth": []
+                    }
+                ]
             }
         },
         "/api/v1/esp32/telemetry": {
@@ -220,7 +435,7 @@
                     "ESP32"
                 ],
                 "summary": "Recebe e processa dados de telemetria de uma placa ESP32",
-                "description": "Endpoint público para ingestão de dados. Cria o dispositivo automaticamente se não existir (firstOrCreate por identificador/MAC).",
+                "description": "Ingestão autenticada por token de dispositivo (header X-DEVICE-TOKEN). O dispositivo deve estar pré-cadastrado e ativo — não há criação automática. Token ausente/inválido/revogado ou dispositivo inativo retornam 401. Provisione o token via /esp32/provision (máquina-a-máquina) ou pelo app.",
                 "operationId": "4e11f793b4dc03072b6fca9b20f7c082",
                 "requestBody": {
                     "required": true,
@@ -296,6 +511,14 @@
                             }
                         }
                     },
+                    "401": {
+                        "description": "X-DEVICE-TOKEN ausente/inválido/revogado ou dispositivo inativo",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
                     "422": {
                         "description": "Dados inválidos",
                         "content": {
@@ -312,7 +535,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "deviceToken": []
+                    }
+                ]
             }
         },
         "/api/v1/esp32/fleet": {
@@ -327,7 +555,56 @@
                     "200": {
                         "description": "Lista de dispositivos ativos com última telemetria"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/esp32/monitor/dispositivos": {
+            "get": {
+                "tags": [
+                    "ESP32"
+                ],
+                "summary": "Lista os dispositivos ESP32 agrupados por empresa (somente leitura)",
+                "description": "Listagem enxuta para o app monitor (role leitor): identificador, nome, status e último contato, agrupados por empresa. Sem token de ingestão nem payload. Respeita o escopo de empresa (leitor enxerga todas).",
+                "operationId": "6719c6e8e23f5a8ab9396111d232b3ad",
+                "parameters": [
+                    {
+                        "name": "empresa_id",
+                        "in": "query",
+                        "description": "Filtra por empresa",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "ativo",
+                        "in": "query",
+                        "description": "Filtra por status (1=ativos, 0=inativos)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "enum": [
+                                0,
+                                1
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Dispositivos agrupados por empresa"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/v1/esp32/{identificador}/historico": {
@@ -387,7 +664,12 @@
                     "422": {
                         "description": "Parâmetros inválidos"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/v1/esp32/{identificador}/ultima": {
@@ -410,12 +692,422 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Última telemetria do dispositivo"
+                        "description": "Última telemetria do dispositivo, ou success=false + message quando ainda não há telemetria"
                     },
                     "404": {
-                        "description": "Dispositivo ou telemetria não encontrado"
+                        "description": "Dispositivo não encontrado"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/posicoes": {
+            "get": {
+                "tags": [
+                    "Posições TRX"
+                ],
+                "summary": "Lista posições dos rastreadores TRX-16 da empresa",
+                "description": "Paginado, mais recentes primeiro. Filtros opcionais por rastreador e período.",
+                "operationId": "70e04b509713c4ae9a94f10554c3689d",
+                "parameters": [
+                    {
+                        "name": "rastreador_id",
+                        "in": "query",
+                        "description": "Filtra por rastreador",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "data_inicio",
+                        "in": "query",
+                        "description": "Início (Y-m-d H:i:s, America/Sao_Paulo)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "data_fim",
+                        "in": "query",
+                        "description": "Fim (Y-m-d H:i:s, America/Sao_Paulo)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Registros por página (padrão 100, máx 500)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Posições paginadas"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/rastreadores/{id}/posicoes": {
+            "get": {
+                "tags": [
+                    "Posições TRX"
+                ],
+                "summary": "Lista as posições de um rastreador TRX-16 por período",
+                "operationId": "e84e5f6a5b65b8fb988053e6f6129a98",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do rastreador",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "data_inicio",
+                        "in": "query",
+                        "description": "Início (Y-m-d H:i:s)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "data_fim",
+                        "in": "query",
+                        "description": "Fim (Y-m-d H:i:s)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Registros por página (padrão 100, máx 500)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Posições paginadas do rastreador"
+                    },
+                    "404": {
+                        "description": "Rastreador não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/rastreadores/{id}/ultima-posicao": {
+            "get": {
+                "tags": [
+                    "Posições TRX"
+                ],
+                "summary": "Retorna a última posição de um rastreador TRX-16",
+                "operationId": "3fdbed43f26488d67f17e07df287ca1a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do rastreador",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Última posição do rastreador"
+                    },
+                    "404": {
+                        "description": "Rastreador ou posição não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/rastreadores": {
+            "get": {
+                "tags": [
+                    "Rastreadores TRX"
+                ],
+                "summary": "Lista os rastreadores TRX-16 ativos da empresa do usuário",
+                "description": "Retorna os rastreadores ativos com a última posição conhecida.",
+                "operationId": "055c53ab63c9b91f2d8fe11b6938dba0",
+                "responses": {
+                    "200": {
+                        "description": "Lista de rastreadores ativos"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Rastreadores TRX"
+                ],
+                "summary": "Cadastra um rastreador TRX-16",
+                "operationId": "08bf28afc89eef3c024a497248c88e8c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "imei",
+                                    "nome"
+                                ],
+                                "properties": {
+                                    "imei": {
+                                        "description": "15 dígitos",
+                                        "type": "string",
+                                        "example": "860000000000001"
+                                    },
+                                    "nome": {
+                                        "type": "string",
+                                        "example": "Caminhão 01"
+                                    },
+                                    "placa": {
+                                        "type": "string",
+                                        "example": "ABC1D23"
+                                    },
+                                    "modelo_veiculo": {
+                                        "type": "string",
+                                        "example": "VW Constellation"
+                                    },
+                                    "descricao": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Rastreador criado"
+                    },
+                    "422": {
+                        "description": "Dados inválidos (IMEI duplicado/tamanho)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/rastreadores/{id}": {
+            "get": {
+                "tags": [
+                    "Rastreadores TRX"
+                ],
+                "summary": "Retorna um rastreador TRX-16 por ID",
+                "operationId": "9abc04a975ec5069c88ddde2e131583a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do rastreador",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detalhes do rastreador"
+                    },
+                    "404": {
+                        "description": "Rastreador não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Rastreadores TRX"
+                ],
+                "summary": "Atualiza um rastreador TRX-16",
+                "operationId": "aff54e8baa4796fd1a7cef13e09f2039",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do rastreador",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "nome": {
+                                        "type": "string",
+                                        "example": "Caminhão 01"
+                                    },
+                                    "placa": {
+                                        "type": "string",
+                                        "example": "ABC1D23"
+                                    },
+                                    "modelo_veiculo": {
+                                        "type": "string"
+                                    },
+                                    "descricao": {
+                                        "type": "string"
+                                    },
+                                    "ativo": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Rastreador atualizado"
+                    },
+                    "404": {
+                        "description": "Rastreador não encontrado"
+                    },
+                    "422": {
+                        "description": "Dados inválidos"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/telemetria": {
+            "post": {
+                "tags": [
+                    "Telemetria ESP32 (legado)"
+                ],
+                "summary": "Receber telemetria (legado TRX / chave global)",
+                "description": "Ingestão legada autenticada pela chave global X-API-KEY (TELEMETRIA_API_KEY). Para novos dispositivos ESP32 use /esp32/telemetry com token por dispositivo.",
+                "operationId": "20b8139193fff71ff25564e346435401",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "device_id",
+                                    "latitude",
+                                    "longitude"
+                                ],
+                                "properties": {
+                                    "device_id": {
+                                        "type": "string",
+                                        "example": "ESP32_01"
+                                    },
+                                    "latitude": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": -23.5505
+                                    },
+                                    "longitude": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": -46.6333
+                                    },
+                                    "velocidade": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 10.5
+                                    },
+                                    "bateria": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 95
+                                    },
+                                    "panic_button": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Telemetria salva com sucesso"
+                    },
+                    "401": {
+                        "description": "X-API-KEY ausente ou inválida"
+                    },
+                    "422": {
+                        "description": "Dados inválidos"
+                    }
+                },
+                "security": [
+                    {
+                        "apiKeyAuth": []
+                    }
+                ]
             }
         },
         "/api/v1/telemetria/{imei}/historico": {
@@ -519,10 +1211,30 @@
             "bearerAuth": {
                 "type": "http",
                 "scheme": "bearer"
+            },
+            "apiKeyAuth": {
+                "type": "apiKey",
+                "description": "Chave de bootstrap (TELEMETRIA_API_KEY) para provisionamento máquina-a-máquina.",
+                "name": "X-API-KEY",
+                "in": "header"
+            },
+            "deviceToken": {
+                "type": "apiKey",
+                "description": "Token de ingestão por dispositivo (provisionado via /esp32/provision).",
+                "name": "X-DEVICE-TOKEN",
+                "in": "header"
             }
         }
     },
     "tags": [
+        {
+            "name": "Autenticação",
+            "description": "Autenticação"
+        },
+        {
+            "name": "Empresas",
+            "description": "Empresas"
+        },
         {
             "name": "ESP32 - Dispositivos",
             "description": "ESP32 - Dispositivos"
@@ -530,6 +1242,18 @@
         {
             "name": "ESP32",
             "description": "ESP32"
+        },
+        {
+            "name": "Posições TRX",
+            "description": "Posições TRX"
+        },
+        {
+            "name": "Rastreadores TRX",
+            "description": "Rastreadores TRX"
+        },
+        {
+            "name": "Telemetria ESP32 (legado)",
+            "description": "Telemetria ESP32 (legado)"
         },
         {
             "name": "Telemetria",
