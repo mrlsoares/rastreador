@@ -7,8 +7,11 @@ use App\Http\Controllers\Web\EmpresaController;
 use App\Http\Controllers\Web\UsuarioController;
 use Illuminate\Support\Facades\Route;
 
+// Index = login: visitante vai pro login, autenticado pro dashboard.
 Route::get('/', function () {
-    return view('welcome');
+    return auth()->check()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
 });
 
 Route::middleware('auth')->group(function () {
