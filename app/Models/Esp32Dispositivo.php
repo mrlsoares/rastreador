@@ -43,12 +43,12 @@ class Esp32Dispositivo extends Model
     }
 
     /**
-     * Restringe à empresa do usuário (multi-tenant). Admin (role 'admin')
-     * enxerga todas as empresas.
+     * Restringe à empresa do usuário (multi-tenant). 'super-admin' e 'leitor'
+     * (monitor read-only global) enxergam todas as empresas.
      */
     public function scopeDaEmpresaDoUsuario($query, ?\App\Models\User $user)
     {
-        if ($user && $user->hasRole('super-admin')) {
+        if ($user && $user->hasAnyRole(['super-admin', 'leitor'])) {
             return $query;
         }
 

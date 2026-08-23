@@ -15,7 +15,9 @@ class RolesEUsuarioAdminSeeder extends Seeder
      */
     public function run(): void
     {
-        foreach (['super-admin', 'admin-empresa', 'operador'] as $role) {
+        // 'leitor' = somente leitura global (app Windows de monitoramento de
+        // tanques). Alcança apenas /esp32/{id}/historico e /esp32/{id}/ultima.
+        foreach (['super-admin', 'admin-empresa', 'operador', 'leitor'] as $role) {
             Role::findOrCreate($role, 'web');
         }
 
@@ -30,6 +32,21 @@ class RolesEUsuarioAdminSeeder extends Seeder
 
         if (! $admin->hasRole('super-admin')) {
             $admin->syncRoles(['super-admin']);
+        }
+
+        // Usuário de máquina para o app Windows (monitor de abastecimento).
+        // Sem empresa_id: enxerga a frota inteira (read-only global).
+        $monitor = User::firstOrCreate(
+            ['email' => 'monitor@rastreador.local'],
+            [
+                'name'       => 'Monitor Tanques (Windows)',
+                'empresa_id' => null,
+                'password'   => Hash::make('trocar-esta-senha'),
+            ]
+        );
+
+        if (! $monitor->hasRole('leitor')) {
+            $monitor->syncRoles(['leitor']);
         }
     }
 }

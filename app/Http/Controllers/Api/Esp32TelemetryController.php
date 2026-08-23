@@ -110,6 +110,58 @@ class Esp32TelemetryController extends Controller
     }
 
     // =========================================================================
+    // GET /api/v1/esp32/monitor/dispositivos
+    // =========================================================================
+
+    #[OA\Get(
+        path: '/api/v1/esp32/monitor/dispositivos',
+        summary: 'Lista os dispositivos ESP32 agrupados por empresa (somente leitura)',
+        description: 'Listagem enxuta para o app monitor (role leitor): identificador, nome, '
+            . 'status e último contato, agrupados por empresa. Sem token de ingestão nem payload. '
+            . 'Respeita o escopo de empresa (leitor enxerga todas).',
+        security: [['bearerAuth' => []]],
+        tags: ['ESP32']
+    )]
+    #[OA\Parameter(name: 'empresa_id', description: 'Filtra por empresa',                    in: 'query', required: false, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'ativo',      description: 'Filtra por status (1=ativos, 0=inativos)', in: 'query', required: false, schema: new OA\Schema(type: 'integer', enum: [0, 1]))]
+    #[OA\Response(response: 200, description: 'Dispositivos agrupados por empresa')]
+    public function dispositivos(Request $request): JsonResponse
+    {
+        $query = Esp32Dispositivo::daEmpresaDoUsuario($request->user())
+            ->with('empresa:id,nome_fantasia,razao_social');
+
+        if ($request->has('ativo')) {
+            $query->where('ativo', (bool) $request->ativo);
+        }
+
+        if ($request->filled('empresa_id')) {
+            $query->where('empresa_id', $request->integer('empresa_id'));
+        }
+
+        $porEmpresa = $query->orderBy('nome')->get()
+            ->groupBy('empresa_id')
+            ->map(function ($grupo) {
+                $empresa = $grupo->first()->empresa;
+
+                return [
+                    'empresa' => $empresa ? [
+                        'id'   => $empresa->id,
+                        'nome' => $empresa->nome_fantasia ?: $empresa->razao_social,
+                    ] : null,
+                    'dispositivos' => $grupo->map(fn ($d) => [
+                        'identificador'  => $d->identificador,
+                        'nome'           => $d->nome,
+                        'ativo'          => $d->ativo,
+                        'ultimo_contato' => $d->ultimo_contato,
+                    ])->values(),
+                ];
+            })
+            ->values();
+
+        return response()->json(['success' => true, 'data' => $porEmpresa]);
+    }
+
+    // =========================================================================
     // GET /api/v1/esp32/{identificador}/historico
     // =========================================================================
 
@@ -169,8 +221,8 @@ class Esp32TelemetryController extends Controller
         tags: ['ESP32']
     )]
     #[OA\Parameter(name: 'identificador', description: 'MAC Address ou ID do dispositivo', in: 'path', required: true, schema: new OA\Schema(type: 'string'))]
-    #[OA\Response(response: 200, description: 'Última telemetria do dispositivo')]
-    #[OA\Response(response: 404, description: 'Dispositivo ou telemetria não encontrado')]
+    #[OA\Response(response: 200, description: 'Última telemetria do dispositivo, ou success=false + message quando ainda não há telemetria')]
+    #[OA\Response(response: 404, description: 'Dispositivo não encontrado')]
     public function ultima(Request $request, string $identificador): JsonResponse
     {
         $dispositivo = Esp32Dispositivo::daEmpresaDoUsuario($request->user())
@@ -178,11 +230,20 @@ class Esp32TelemetryController extends Controller
             ->with('ultimaTelemetria')
             ->firstOrFail();
 
+        // Dispositivo existe mas ainda sem telemetria: 200 com aviso (não é erro
+        // HTTP — o cliente Delphi captura a mensagem sem disparar exceção 404).
         if (! $dispositivo->ultimaTelemetria) {
             return response()->json([
-                'success' => false,
-                'message' => 'Nenhuma telemetria encontrada para este dispositivo.',
-            ], 404);
+                'success'     => false,
+                'message'     => 'Nenhuma telemetria encontrada para este dispositivo.',
+                'dispositivo' => [
+                    'identificador'  => $dispositivo->identificador,
+                    'nome'           => $dispositivo->nome,
+                    'ativo'          => $dispositivo->ativo,
+                    'ultimo_contato' => $dispositivo->ultimo_contato,
+                ],
+                'telemetria'  => null,
+            ], 200);
         }
 
         return response()->json([
