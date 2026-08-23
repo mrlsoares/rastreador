@@ -37,7 +37,7 @@ class RolesEUsuarioAdminSeeder extends Seeder
         // Usuário de máquina para o app Windows (monitor de abastecimento).
         // Sem empresa_id: enxerga a frota inteira (read-only global).
         $monitor = User::firstOrCreate(
-            ['email' => 'monitor@rastreador.local'],
+            ['email' => 'monitor@haufer.com.br'],
             [
                 'name'       => 'Monitor Tanques (Windows)',
                 'empresa_id' => null,
