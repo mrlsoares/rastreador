@@ -18,6 +18,9 @@ Route::middleware('auth')->group(function () {
     // Painel: dashboard real da aplicação.
     Route::get('/dashboard', [RastreadorController::class, 'dashboard'])->name('dashboard');
 
+    // Consulta de histórico/última telemetria ESP32 (por empresa/dispositivo/período).
+    Route::get('/esp32/historico', [\App\Http\Controllers\Web\Esp32MonitorController::class, 'historico'])->name('esp32.historico');
+
     // Rastreadores / mapa (antes públicos — agora exigem login).
     Route::get('/rastreadores', [RastreadorController::class, 'index'])->name('rastreadores.index');
     Route::get('/rastreadores/{rastreador}/historico', [PosicaoController::class, 'historico'])->name('rastreadores.historico');

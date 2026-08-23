@@ -22,7 +22,7 @@ class RolesEUsuarioAdminSeeder extends Seeder
         }
 
         $admin = User::firstOrCreate(
-            ['email' => 'admin@rastreador.local'],
+            ['email' => 'admin@haufer.com.br'],
             [
                 'name'       => 'Administrador',
                 'empresa_id' => 1,
