@@ -327,8 +327,11 @@
         <a href="{{ route('dashboard') }}"       class="nav-item {{ request()->routeIs('dashboard')              ? 'active' : '' }}">
             <i class="fas fa-gauge-high"></i> Dashboard
         </a>
-        <a href="{{ route('esp32.historico') }}" class="nav-item {{ request()->routeIs('esp32.*')                ? 'active' : '' }}">
+        <a href="{{ route('esp32.historico') }}" class="nav-item {{ request()->routeIs('esp32.historico')         ? 'active' : '' }}">
             <i class="fas fa-clock-rotate-left"></i> Histórico ESP32
+        </a>
+        <a href="{{ route('esp32.ultima') }}"    class="nav-item {{ request()->routeIs('esp32.ultima')            ? 'active' : '' }}">
+            <i class="fas fa-satellite-dish"></i> Última Leitura
         </a>
         <a href="{{ route('rastreadores.index') }}" class="nav-item {{ request()->routeIs('rastreadores.*')      ? 'active' : '' }}">
             <i class="fas fa-truck"></i> Rastreadores

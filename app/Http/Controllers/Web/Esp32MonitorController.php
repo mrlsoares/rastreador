@@ -74,4 +74,45 @@ class Esp32MonitorController extends Controller
             'empresas', 'dispositivos', 'dispositivo', 'ultima', 'telemetrias'
         ));
     }
+
+    /**
+     * Consulta a última leitura gravada de um dispositivo (por empresa/dispositivo).
+     */
+    public function ultima(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'empresa_id'  => 'nullable|integer',
+            'dispositivo' => 'nullable|string|max:50',
+        ]);
+
+        $veTudo = $user->hasAnyRole(['super-admin', 'leitor']);
+
+        $empresas = $veTudo
+            ? Empresa::orderBy('nome_fantasia')->get(['id', 'nome_fantasia'])
+            : Empresa::whereKey($user->empresa_id)->get(['id', 'nome_fantasia']);
+
+        $dispositivos = Esp32Dispositivo::daEmpresaDoUsuario($user)
+            ->with('empresa:id,nome_fantasia')
+            ->orderBy('nome')
+            ->get(['id', 'identificador', 'nome', 'empresa_id']);
+
+        $dispositivo = null;
+        $ultima      = null;
+
+        $mac = $request->input('dispositivo');
+        if ($mac) {
+            $dispositivo = Esp32Dispositivo::daEmpresaDoUsuario($user)
+                ->where('identificador', $mac)
+                ->with('ultimaTelemetria')
+                ->first();
+
+            if ($dispositivo) {
+                $ultima = $dispositivo->ultimaTelemetria;
+            }
+        }
+
+        return view('esp32.ultima', compact('empresas', 'dispositivos', 'dispositivo', 'ultima'));
+    }
 }

@@ -15,8 +15,11 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('esp32.historico')" :active="request()->routeIs('esp32.*')">
+                    <x-nav-link :href="route('esp32.historico')" :active="request()->routeIs('esp32.historico')">
                         {{ __('Histórico ESP32') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('esp32.ultima')" :active="request()->routeIs('esp32.ultima')">
+                        {{ __('Última Leitura') }}
                     </x-nav-link>
                     @role('super-admin')
                         <x-nav-link :href="route('empresas.index')" :active="request()->routeIs('empresas.*')">

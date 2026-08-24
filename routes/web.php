@@ -20,6 +20,7 @@ Route::middleware('auth')->group(function () {
 
     // Consulta de histórico/última telemetria ESP32 (por empresa/dispositivo/período).
     Route::get('/esp32/historico', [\App\Http\Controllers\Web\Esp32MonitorController::class, 'historico'])->name('esp32.historico');
+    Route::get('/esp32/ultima',    [\App\Http\Controllers\Web\Esp32MonitorController::class, 'ultima'])->name('esp32.ultima');
 
     // Rastreadores / mapa (antes públicos — agora exigem login).
     Route::get('/rastreadores', [RastreadorController::class, 'index'])->name('rastreadores.index');
